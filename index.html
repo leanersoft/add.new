@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Create a support case — add.new</title>
+<style>
+  body{font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;margin:0;display:grid;place-items:center;min-height:100svh;background:#0b0f19;color:#e5e7eb}
+  .wrap{width:100%;max-width:680px;padding:24px}
+  h1{margin:0 0 12px}
+  form{display:grid;gap:12px;background:#101826;border:1px solid #1f2737;border-radius:12px;padding:16px}
+  input,select,textarea,button{border-radius:10px;border:1px solid #2a2f3d;background:#0b1220;color:#e5e7eb;padding:12px}
+  textarea{min-height:140px}
+  button{background:#2563eb;border-color:#1d4ed8;font-weight:600;cursor:pointer}
+  small{color:#9ca3af}
+</style>
+<div class="wrap">
+  <h1>Create a support case</h1>
+  <form action="/api/case" method="POST" accept-charset="utf-8">
+    <input name="name" placeholder="Your name" required />
+    <input type="email" name="email" placeholder="Your email" required />
+    <input name="subject" placeholder="Subject" required />
+    <textarea
+      name="details"
+      placeholder="Describe the issue…"
+      required
+    ></textarea>
+    <select name="priority">
+      <option>Normal</option>
+      <option>Low</option>
+      <option>High</option>
+      <option>Urgent</option>
+    </select>
+    <select name="category">
+      <option>Other</option>
+      <option>Billing</option>
+      <option>Account</option>
+      <option>Bug</option>
+      <option>Feature request</option>
+    </select>
+    <button type="submit">Open case</button>
+    <small>By submitting, you agree we can email you about this case.</small>
+  </form>
+</div>
