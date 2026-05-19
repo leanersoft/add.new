@@ -1,0 +1,19 @@
+{
+  "name": "ADD.NEW",
+  "short_name": "ADD.NEW",
+  "description": "A local-first writing environment that keeps drafts in the browser and remains available offline after the first load.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#f4efe6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

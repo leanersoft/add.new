@@ -1,0 +1,327 @@
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Your message was submitted."><title>Request submitted — ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/writer/lora-normal-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
+    });
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><style>.success-shell[data-astro-cid-kyzfqoow]{width:min(640px,calc(100vw - 2 * var(--size-4)));margin:0 auto;padding:var(--size-fluid-5) 0 var(--size-9);display:grid;gap:var(--size-3)}.success-eyebrow[data-astro-cid-kyzfqoow]{margin:0;font-family:var(--sn-font-ui);font-size:.76rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sn-accent-base)}h1[data-astro-cid-kyzfqoow]{margin:0}.success-lede[data-astro-cid-kyzfqoow]{margin:0;max-width:var(--size-content-2);color:var(--sn-text-soft);line-height:1.55}.success-meta[data-astro-cid-kyzfqoow]{margin:0;color:var(--sn-text-muted);font-family:var(--sn-font-ui);font-size:.85rem}.success-meta[data-astro-cid-kyzfqoow] a[data-astro-cid-kyzfqoow]{color:var(--sn-link-base);text-decoration:none}.success-meta[data-astro-cid-kyzfqoow] a[data-astro-cid-kyzfqoow]:hover{color:var(--sn-link-hover)}
+</style>
+<link rel="stylesheet" href="/_astro/BaseLayout.CMjirWmf.css">
+<link rel="stylesheet" href="/_astro/global.BQXuNs0x.css"></head> <body data-astro-cid-37fxchfa> <a href="#main-content" class="skip-link" data-astro-cid-37fxchfa>Skip to content</a> <header class="site-header" data-astro-cid-3ef6ksr2> <nav class="site-nav" aria-label="Primary" data-astro-cid-3ef6ksr2> <a href="/" class="brand-mark" data-astro-cid-3ef6ksr2> <span class="brand-eyebrow" data-astro-cid-3ef6ksr2>ADD.NEW</span> <span class="brand-title" data-astro-cid-3ef6ksr2></span> </a> <div class="nav-links" data-astro-cid-3ef6ksr2> <a href="/contact" aria-current="page" class="active" data-astro-cid-3ef6ksr2> Contact </a><a href="/" data-astro-cid-3ef6ksr2> Writer </a> </div> <div class="nav-tools" data-astro-cid-3ef6ksr2> <!-- Theme toggle: click main button to cycle light/dark; arrow or long-press opens full menu --><div class="theme-toggle-wrap" role="group" aria-label="Theme preference" data-astro-cid-x3pjskd3> <button class="theme-toggle-main" type="button" data-theme-toggle aria-label="Theme: Auto. Click to toggle light/dark." data-astro-cid-x3pjskd3> <span class="theme-toggle-icon" aria-hidden="true" data-astro-cid-x3pjskd3></span> <span class="theme-toggle-label" data-theme-toggle-label data-astro-cid-x3pjskd3>Auto</span> </button> <span class="theme-toggle-divider" aria-hidden="true" data-astro-cid-x3pjskd3></span> <button class="theme-toggle-arrow" type="button" data-theme-toggle-arrow aria-label="More theme options" aria-expanded="false" aria-haspopup="listbox" data-astro-cid-x3pjskd3> <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false" data-astro-cid-x3pjskd3> <path d="M1.5 3L5 7L8.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" data-astro-cid-x3pjskd3></path> </svg> </button> <ul class="theme-dropdown" role="listbox" aria-label="Theme options" data-theme-toggle-dropdown hidden data-astro-cid-x3pjskd3> <li class="theme-dropdown-option" role="option" data-theme-option="system" tabindex="-1" data-astro-cid-x3pjskd3>Auto</li> <li class="theme-dropdown-option" role="option" data-theme-option="light" tabindex="-1" data-astro-cid-x3pjskd3>Light</li> <li class="theme-dropdown-option" role="option" data-theme-option="dark" tabindex="-1" data-astro-cid-x3pjskd3>Dark</li> </ul> </div> <script>
+  (() => {
+    const labels = { system: 'Auto', light: 'Light', dark: 'Dark' };
+
+    const mainButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    const arrowButtons = Array.from(document.querySelectorAll('[data-theme-toggle-arrow]'));
+    const dropdowns = Array.from(document.querySelectorAll('[data-theme-toggle-dropdown]'));
+
+    if (!mainButtons.length) return;
+
+    const getApi = () => window.__semnoteTheme;
+    const getPreference = () => getApi()?.getPreference?.() ?? 'system';
+    const getResolvedTheme = () => getApi()?.getResolvedTheme?.() ?? 'light';
+
+    // Main click cycles only light <-> dark (system is accessible via dropdown)
+    const getNextLightDark = (current) => (current === 'light' ? 'dark' : 'light');
+
+    const render = () => {
+      const preference = getPreference();
+      const resolvedTheme = getResolvedTheme();
+
+      mainButtons.forEach((btn) => {
+        const label = btn.querySelector('[data-theme-toggle-label]');
+        if (label) label.textContent = labels[preference];
+        btn.dataset.preference = preference;
+        btn.dataset.resolvedTheme = resolvedTheme;
+        btn.setAttribute('aria-label', `Theme: ${labels[preference]}. Click to toggle light/dark.`);
+      });
+
+      dropdowns.forEach((dd) => {
+        dd.querySelectorAll('[data-theme-option]').forEach((opt) => {
+          const selected = opt.dataset.themeOption === preference;
+          opt.setAttribute('aria-selected', String(selected));
+          opt.classList.toggle('is-selected', selected);
+        });
+      });
+    };
+
+    const openDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = false;
+      arrowBtn.setAttribute('aria-expanded', 'true');
+      const first = dropdown.querySelector('[data-theme-option]');
+      if (first) first.focus();
+    };
+
+    const closeDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = true;
+      arrowBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    const closeAllDropdowns = () => {
+      arrowButtons.forEach((ab, i) => closeDropdown(ab, dropdowns[i]));
+    };
+
+    // Main button: long-press opens dropdown; short click cycles light/dark
+    mainButtons.forEach((btn, i) => {
+      let longPressTimer = null;
+      let longPressCompleted = false;
+
+      const startLongPress = () => {
+        longPressCompleted = false;
+        longPressTimer = setTimeout(() => {
+          longPressCompleted = true;
+          longPressTimer = null;
+          closeAllDropdowns();
+          if (arrowButtons[i]) openDropdown(arrowButtons[i], dropdowns[i]);
+        }, 500);
+      };
+
+      const cancelLongPress = () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      };
+
+      btn.addEventListener('mousedown', startLongPress);
+      btn.addEventListener('touchstart', startLongPress, { passive: true });
+      btn.addEventListener('mouseup', cancelLongPress);
+      btn.addEventListener('touchend', cancelLongPress);
+      btn.addEventListener('mouseleave', cancelLongPress);
+
+      btn.addEventListener('click', () => {
+        if (longPressCompleted) { longPressCompleted = false; return; }
+        getApi()?.setPreference?.(getNextLightDark(getPreference()));
+      });
+    });
+
+    // Arrow button: toggle dropdown
+    arrowButtons.forEach((arrowBtn, i) => {
+      arrowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = dropdowns[i];
+        if (dropdown.hidden) {
+          closeAllDropdowns();
+          openDropdown(arrowBtn, dropdown);
+        } else {
+          closeDropdown(arrowBtn, dropdown);
+        }
+      });
+    });
+
+    // Dropdown options: click to select, keyboard navigation
+    dropdowns.forEach((dropdown, i) => {
+      const arrowBtn = arrowButtons[i];
+      dropdown.querySelectorAll('[data-theme-option]').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          getApi()?.setPreference?.(opt.dataset.themeOption);
+          closeDropdown(arrowBtn, dropdown);
+          mainButtons[i]?.focus();
+        });
+
+        opt.addEventListener('keydown', (e) => {
+          const options = Array.from(dropdown.querySelectorAll('[data-theme-option]'));
+          const idx = options.indexOf(e.target);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            options[(idx + 1) % options.length]?.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            options[(idx - 1 + options.length) % options.length]?.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            opt.click();
+          } else if (e.key === 'Escape' || e.key === 'Tab') {
+            closeDropdown(arrowBtn, dropdown);
+            mainButtons[i]?.focus();
+          }
+        });
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      arrowButtons.forEach((ab, i) => {
+        const dd = dropdowns[i];
+        if (!dd.hidden && !dd.contains(e.target) && e.target !== ab) {
+          closeDropdown(ab, dd);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    window.addEventListener('semnote:themechange', render);
+    render();
+  })();
+</script> </div> </nav> </header> <main id="main-content" class="site-main" data-astro-cid-37fxchfa>  <section class="success-shell" data-astro-cid-kyzfqoow> <p class="success-eyebrow" data-astro-cid-kyzfqoow>Support</p> <h1 data-astro-cid-kyzfqoow>Success</h1> <p class="success-lede" data-astro-cid-kyzfqoow>
+Thanks — your message is on its way. We'll reply by email as soon as we can.
+</p> <p class="success-meta" data-astro-cid-kyzfqoow>
+You'll be redirected to Semnote Writer in 10&nbsp;seconds.
+<a href="/" data-astro-cid-kyzfqoow>Return now</a>.
+</p> </section>  </main> <footer class="site-footer surface-default" data-astro-cid-sz7xmlte> <div class="site-footer__inner" data-astro-cid-sz7xmlte> <p class="site-footer__lead" data-astro-cid-sz7xmlte>
+Semnote Writer keeps documents readable in source form, structured for reuse, and portable enough to outlast a single tool.
+</p> <div class="site-footer__links" data-astro-cid-sz7xmlte> <a href="/contact" data-astro-cid-sz7xmlte>Contact</a> <a href="/privacy" data-astro-cid-sz7xmlte>Privacy</a> <a href="/terms" data-astro-cid-sz7xmlte>Terms</a> </div> <p class="site-footer__meta" data-astro-cid-sz7xmlte>
+Copyright &copy; 2026 Leanersoft
+</p> </div> </footer></body></html> <script type="module">setTimeout(()=>{location.href="/"},1e4);</script>

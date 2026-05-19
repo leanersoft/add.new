@@ -1,0 +1,324 @@
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Open a support case with the ADD.NEW team."><title>Contact — ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/writer/lora-normal-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
+    });
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><style>.contact-shell[data-astro-cid-uw5kdbxl]{width:min(720px,calc(100vw - 2 * var(--size-4)));margin:0 auto;padding:var(--size-fluid-4) 0 var(--size-9);display:grid;gap:var(--size-6)}.contact-head[data-astro-cid-uw5kdbxl]{display:grid;gap:var(--size-2)}.contact-eyebrow[data-astro-cid-uw5kdbxl]{margin:0;font-family:var(--sn-font-ui);font-size:.76rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sn-accent-base)}h1[data-astro-cid-uw5kdbxl]{margin:0}.contact-lede[data-astro-cid-uw5kdbxl]{margin:0;max-width:var(--size-content-3);color:var(--sn-text-soft);line-height:1.55}.contact-form[data-astro-cid-uw5kdbxl]{display:grid;gap:var(--size-4);padding:var(--size-5);background:var(--sn-surface-panel);border:1px solid var(--sn-border-subtle);border-radius:var(--radius-3)}.field[data-astro-cid-uw5kdbxl]{display:grid;gap:var(--size-2)}.field-row[data-astro-cid-uw5kdbxl]{grid-template-columns:1fr 1fr;gap:var(--size-4)}.field-row[data-astro-cid-uw5kdbxl]>div[data-astro-cid-uw5kdbxl]{display:grid;gap:var(--size-2)}label[data-astro-cid-uw5kdbxl]{font-family:var(--sn-font-ui);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sn-text-muted)}input[data-astro-cid-uw5kdbxl],select[data-astro-cid-uw5kdbxl],textarea[data-astro-cid-uw5kdbxl]{font:inherit;color:var(--sn-text-base);background:var(--sn-surface-base);border:1px solid var(--sn-border-default);border-radius:var(--radius-2);padding:var(--size-3);width:100%;box-sizing:border-box}textarea[data-astro-cid-uw5kdbxl]{min-height:10rem;resize:vertical;line-height:1.5}input[data-astro-cid-uw5kdbxl]:focus-visible,select[data-astro-cid-uw5kdbxl]:focus-visible,textarea[data-astro-cid-uw5kdbxl]:focus-visible{outline:none;border-color:var(--sn-border-focus);box-shadow:0 0 0 3px color-mix(in oklch,var(--sn-border-focus) 28%,transparent)}.hp[data-astro-cid-uw5kdbxl]{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}.actions[data-astro-cid-uw5kdbxl]{display:flex;flex-wrap:wrap;align-items:center;gap:var(--size-3) var(--size-5);margin-top:var(--size-2)}button[data-astro-cid-uw5kdbxl][type=submit]{display:inline-flex;align-items:center;justify-content:center;padding:var(--size-3) var(--size-5);border:1px solid transparent;border-radius:var(--radius-round);background:var(--sn-accent-base);color:var(--sn-text-on-emphasis);font-family:var(--sn-font-ui);font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;cursor:pointer;box-shadow:var(--shadow-2);transition:transform .18s var(--ease-3),background-color .18s var(--ease-3),box-shadow .18s var(--ease-3)}button[data-astro-cid-uw5kdbxl][type=submit]:hover:not(:disabled){background:var(--sn-link-hover);box-shadow:var(--shadow-3)}button[data-astro-cid-uw5kdbxl][type=submit]:active:not(:disabled){transform:translateY(var(--sn-press-offset))}button[data-astro-cid-uw5kdbxl][type=submit]:disabled{opacity:.65;cursor:not-allowed}.actions[data-astro-cid-uw5kdbxl] small[data-astro-cid-uw5kdbxl]{color:var(--sn-text-muted);font-family:var(--sn-font-ui);font-size:.78rem;letter-spacing:.04em;max-inline-size:var(--size-content-2)}@media(max-width:560px){.field-row[data-astro-cid-uw5kdbxl]{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="/_astro/BaseLayout.CMjirWmf.css">
+<link rel="stylesheet" href="/_astro/global.BQXuNs0x.css"></head> <body data-astro-cid-37fxchfa> <a href="#main-content" class="skip-link" data-astro-cid-37fxchfa>Skip to content</a> <header class="site-header" data-astro-cid-3ef6ksr2> <nav class="site-nav" aria-label="Primary" data-astro-cid-3ef6ksr2> <a href="/" class="brand-mark" data-astro-cid-3ef6ksr2> <span class="brand-eyebrow" data-astro-cid-3ef6ksr2>ADD.NEW</span> <span class="brand-title" data-astro-cid-3ef6ksr2></span> </a> <div class="nav-links" data-astro-cid-3ef6ksr2> <a href="/contact" aria-current="page" class="active" data-astro-cid-3ef6ksr2> Contact </a><a href="/" data-astro-cid-3ef6ksr2> Writer </a> </div> <div class="nav-tools" data-astro-cid-3ef6ksr2> <!-- Theme toggle: click main button to cycle light/dark; arrow or long-press opens full menu --><div class="theme-toggle-wrap" role="group" aria-label="Theme preference" data-astro-cid-x3pjskd3> <button class="theme-toggle-main" type="button" data-theme-toggle aria-label="Theme: Auto. Click to toggle light/dark." data-astro-cid-x3pjskd3> <span class="theme-toggle-icon" aria-hidden="true" data-astro-cid-x3pjskd3></span> <span class="theme-toggle-label" data-theme-toggle-label data-astro-cid-x3pjskd3>Auto</span> </button> <span class="theme-toggle-divider" aria-hidden="true" data-astro-cid-x3pjskd3></span> <button class="theme-toggle-arrow" type="button" data-theme-toggle-arrow aria-label="More theme options" aria-expanded="false" aria-haspopup="listbox" data-astro-cid-x3pjskd3> <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false" data-astro-cid-x3pjskd3> <path d="M1.5 3L5 7L8.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" data-astro-cid-x3pjskd3></path> </svg> </button> <ul class="theme-dropdown" role="listbox" aria-label="Theme options" data-theme-toggle-dropdown hidden data-astro-cid-x3pjskd3> <li class="theme-dropdown-option" role="option" data-theme-option="system" tabindex="-1" data-astro-cid-x3pjskd3>Auto</li> <li class="theme-dropdown-option" role="option" data-theme-option="light" tabindex="-1" data-astro-cid-x3pjskd3>Light</li> <li class="theme-dropdown-option" role="option" data-theme-option="dark" tabindex="-1" data-astro-cid-x3pjskd3>Dark</li> </ul> </div> <script>
+  (() => {
+    const labels = { system: 'Auto', light: 'Light', dark: 'Dark' };
+
+    const mainButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    const arrowButtons = Array.from(document.querySelectorAll('[data-theme-toggle-arrow]'));
+    const dropdowns = Array.from(document.querySelectorAll('[data-theme-toggle-dropdown]'));
+
+    if (!mainButtons.length) return;
+
+    const getApi = () => window.__semnoteTheme;
+    const getPreference = () => getApi()?.getPreference?.() ?? 'system';
+    const getResolvedTheme = () => getApi()?.getResolvedTheme?.() ?? 'light';
+
+    // Main click cycles only light <-> dark (system is accessible via dropdown)
+    const getNextLightDark = (current) => (current === 'light' ? 'dark' : 'light');
+
+    const render = () => {
+      const preference = getPreference();
+      const resolvedTheme = getResolvedTheme();
+
+      mainButtons.forEach((btn) => {
+        const label = btn.querySelector('[data-theme-toggle-label]');
+        if (label) label.textContent = labels[preference];
+        btn.dataset.preference = preference;
+        btn.dataset.resolvedTheme = resolvedTheme;
+        btn.setAttribute('aria-label', `Theme: ${labels[preference]}. Click to toggle light/dark.`);
+      });
+
+      dropdowns.forEach((dd) => {
+        dd.querySelectorAll('[data-theme-option]').forEach((opt) => {
+          const selected = opt.dataset.themeOption === preference;
+          opt.setAttribute('aria-selected', String(selected));
+          opt.classList.toggle('is-selected', selected);
+        });
+      });
+    };
+
+    const openDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = false;
+      arrowBtn.setAttribute('aria-expanded', 'true');
+      const first = dropdown.querySelector('[data-theme-option]');
+      if (first) first.focus();
+    };
+
+    const closeDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = true;
+      arrowBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    const closeAllDropdowns = () => {
+      arrowButtons.forEach((ab, i) => closeDropdown(ab, dropdowns[i]));
+    };
+
+    // Main button: long-press opens dropdown; short click cycles light/dark
+    mainButtons.forEach((btn, i) => {
+      let longPressTimer = null;
+      let longPressCompleted = false;
+
+      const startLongPress = () => {
+        longPressCompleted = false;
+        longPressTimer = setTimeout(() => {
+          longPressCompleted = true;
+          longPressTimer = null;
+          closeAllDropdowns();
+          if (arrowButtons[i]) openDropdown(arrowButtons[i], dropdowns[i]);
+        }, 500);
+      };
+
+      const cancelLongPress = () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      };
+
+      btn.addEventListener('mousedown', startLongPress);
+      btn.addEventListener('touchstart', startLongPress, { passive: true });
+      btn.addEventListener('mouseup', cancelLongPress);
+      btn.addEventListener('touchend', cancelLongPress);
+      btn.addEventListener('mouseleave', cancelLongPress);
+
+      btn.addEventListener('click', () => {
+        if (longPressCompleted) { longPressCompleted = false; return; }
+        getApi()?.setPreference?.(getNextLightDark(getPreference()));
+      });
+    });
+
+    // Arrow button: toggle dropdown
+    arrowButtons.forEach((arrowBtn, i) => {
+      arrowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = dropdowns[i];
+        if (dropdown.hidden) {
+          closeAllDropdowns();
+          openDropdown(arrowBtn, dropdown);
+        } else {
+          closeDropdown(arrowBtn, dropdown);
+        }
+      });
+    });
+
+    // Dropdown options: click to select, keyboard navigation
+    dropdowns.forEach((dropdown, i) => {
+      const arrowBtn = arrowButtons[i];
+      dropdown.querySelectorAll('[data-theme-option]').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          getApi()?.setPreference?.(opt.dataset.themeOption);
+          closeDropdown(arrowBtn, dropdown);
+          mainButtons[i]?.focus();
+        });
+
+        opt.addEventListener('keydown', (e) => {
+          const options = Array.from(dropdown.querySelectorAll('[data-theme-option]'));
+          const idx = options.indexOf(e.target);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            options[(idx + 1) % options.length]?.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            options[(idx - 1 + options.length) % options.length]?.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            opt.click();
+          } else if (e.key === 'Escape' || e.key === 'Tab') {
+            closeDropdown(arrowBtn, dropdown);
+            mainButtons[i]?.focus();
+          }
+        });
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      arrowButtons.forEach((ab, i) => {
+        const dd = dropdowns[i];
+        if (!dd.hidden && !dd.contains(e.target) && e.target !== ab) {
+          closeDropdown(ab, dd);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    window.addEventListener('semnote:themechange', render);
+    render();
+  })();
+</script> </div> </nav> </header> <main id="main-content" class="site-main" data-astro-cid-37fxchfa>  <section class="contact-shell" data-astro-cid-uw5kdbxl> <header class="contact-head" data-astro-cid-uw5kdbxl> <p class="contact-eyebrow" data-astro-cid-uw5kdbxl>Support</p> <h2 data-astro-cid-uw5kdbxl>Get in Touch</h2> <p class="contact-lede" data-astro-cid-uw5kdbxl>
+Questions, issues, ideas, or anything that needs a human. We reply by email.
+</p> </header> <form class="contact-form" action="/api/case" method="POST" accept-charset="utf-8" data-astro-cid-uw5kdbxl> <div class="field" data-astro-cid-uw5kdbxl> <label for="contact-name" data-astro-cid-uw5kdbxl>Your name</label> <input id="contact-name" name="name" required maxlength="100" autocomplete="name" data-astro-cid-uw5kdbxl> </div> <div class="field" data-astro-cid-uw5kdbxl> <label for="contact-email" data-astro-cid-uw5kdbxl>Your email</label> <input id="contact-email" type="email" name="email" required maxlength="254" autocomplete="email" pattern="[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}" title="Please enter a valid email address" data-astro-cid-uw5kdbxl> </div> <div class="field" data-astro-cid-uw5kdbxl> <label for="contact-subject" data-astro-cid-uw5kdbxl>Subject</label> <input id="contact-subject" name="subject" required maxlength="150" data-astro-cid-uw5kdbxl> </div> <div class="field field-row" data-astro-cid-uw5kdbxl> <div data-astro-cid-uw5kdbxl> <label for="contact-category" data-astro-cid-uw5kdbxl>Category</label> <select id="contact-category" name="category" data-astro-cid-uw5kdbxl> <option data-astro-cid-uw5kdbxl>General</option> <option data-astro-cid-uw5kdbxl>Legal</option> <option data-astro-cid-uw5kdbxl>Sales</option> <option data-astro-cid-uw5kdbxl>Issue</option> <option data-astro-cid-uw5kdbxl>Suggestion</option> </select> </div> <div data-astro-cid-uw5kdbxl> <label for="contact-priority" data-astro-cid-uw5kdbxl>Priority</label> <select id="contact-priority" name="priority" data-astro-cid-uw5kdbxl> <option data-astro-cid-uw5kdbxl>Normal</option> <option data-astro-cid-uw5kdbxl>Low</option> <option data-astro-cid-uw5kdbxl>High</option> <option data-astro-cid-uw5kdbxl>Urgent</option> </select> </div> </div> <div class="field" data-astro-cid-uw5kdbxl> <label for="contact-details" data-astro-cid-uw5kdbxl>Details</label> <textarea id="contact-details" name="details" required minlength="10" maxlength="2000" placeholder="Tell us what's going on. Steps, context, anything useful." data-astro-cid-uw5kdbxl></textarea> </div> <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" data-astro-cid-uw5kdbxl> <div class="actions" data-astro-cid-uw5kdbxl> <button type="submit" data-astro-cid-uw5kdbxl>Send</button> <small data-astro-cid-uw5kdbxl>By submitting, you agree we can email you about this case.</small> </div> </form> </section>  </main> <footer class="site-footer surface-default" data-astro-cid-sz7xmlte> <div class="site-footer__inner" data-astro-cid-sz7xmlte> <p class="site-footer__lead" data-astro-cid-sz7xmlte>
+Semnote Writer keeps documents readable in source form, structured for reuse, and portable enough to outlast a single tool.
+</p> <div class="site-footer__links" data-astro-cid-sz7xmlte> <a href="/contact" data-astro-cid-sz7xmlte>Contact</a> <a href="/privacy" data-astro-cid-sz7xmlte>Privacy</a> <a href="/terms" data-astro-cid-sz7xmlte>Terms</a> </div> <p class="site-footer__meta" data-astro-cid-sz7xmlte>
+Copyright &copy; 2026 Leanersoft
+</p> </div> </footer></body></html> <script type="module">const e=document.querySelector(".contact-form");e?.addEventListener("submit",()=>{const t=e.querySelector('button[type="submit"]');t&&(t.disabled=!0,t.textContent="Submitting…")});</script>

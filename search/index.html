@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Search the ADD.NEW site and seeded documentation."><title>Search — ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/writer/lora-normal-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
+    });
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><style>.search-island{display:grid;gap:var(--size-3)}.search-input{width:100%;padding:var(--size-3) var(--size-4);border:1px solid var(--sn-border-default);border-radius:1rem;background:var(--sn-surface-base);color:var(--sn-text-base);font-family:var(--sn-font-prose);font-size:1.05rem}.search-input:focus{outline:none;border-color:var(--sn-border-focus);box-shadow:0 0 0 4px color-mix(in oklch,var(--sn-accent-base) 15%,transparent)}.search-results{list-style:none;padding:0;margin:0;display:grid;gap:var(--size-3)}.search-result-link{display:grid;gap:var(--size-2);padding:var(--size-3) var(--size-4);border:1px solid var(--sn-border-subtle);border-radius:1rem;background:var(--sn-surface-panel);color:inherit;text-decoration:none}.search-result-link:hover{border-color:var(--sn-border-emphasis)}.result-title{font-family:var(--sn-font-prose);font-size:1.15rem;color:var(--sn-text-emphasis)}.result-badge{font-family:var(--sn-font-ui);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sn-accent-base)}.result-description,.search-empty,.search-hint{color:var(--sn-text-soft)}.utility-shell[data-astro-cid-ipsxrsrh]{width:min(820px,calc(100vw - 2 * var(--size-4)));margin:0 auto;padding:var(--size-9) 0 var(--size-9);display:grid;gap:var(--size-3)}.utility-kicker[data-astro-cid-ipsxrsrh]{margin:0;font-family:var(--sn-font-ui);font-size:.76rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sn-accent-base)}h1[data-astro-cid-ipsxrsrh],.utility-lede[data-astro-cid-ipsxrsrh]{margin:0}.utility-lede[data-astro-cid-ipsxrsrh]{color:var(--sn-text-soft);margin-bottom:var(--size-4)}
+</style>
+<link rel="stylesheet" href="/_astro/BaseLayout.CMjirWmf.css">
+<link rel="stylesheet" href="/_astro/global.BQXuNs0x.css"></head> <body data-astro-cid-37fxchfa> <a href="#main-content" class="skip-link" data-astro-cid-37fxchfa>Skip to content</a> <header class="site-header" data-astro-cid-3ef6ksr2> <nav class="site-nav" aria-label="Primary" data-astro-cid-3ef6ksr2> <a href="/" class="brand-mark" data-astro-cid-3ef6ksr2> <span class="brand-eyebrow" data-astro-cid-3ef6ksr2>ADD.NEW</span> <span class="brand-title" data-astro-cid-3ef6ksr2></span> </a> <div class="nav-links" data-astro-cid-3ef6ksr2> <a href="/contact" data-astro-cid-3ef6ksr2> Contact </a><a href="/" data-astro-cid-3ef6ksr2> Writer </a> </div> <div class="nav-tools" data-astro-cid-3ef6ksr2> <!-- Theme toggle: click main button to cycle light/dark; arrow or long-press opens full menu --><div class="theme-toggle-wrap" role="group" aria-label="Theme preference" data-astro-cid-x3pjskd3> <button class="theme-toggle-main" type="button" data-theme-toggle aria-label="Theme: Auto. Click to toggle light/dark." data-astro-cid-x3pjskd3> <span class="theme-toggle-icon" aria-hidden="true" data-astro-cid-x3pjskd3></span> <span class="theme-toggle-label" data-theme-toggle-label data-astro-cid-x3pjskd3>Auto</span> </button> <span class="theme-toggle-divider" aria-hidden="true" data-astro-cid-x3pjskd3></span> <button class="theme-toggle-arrow" type="button" data-theme-toggle-arrow aria-label="More theme options" aria-expanded="false" aria-haspopup="listbox" data-astro-cid-x3pjskd3> <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false" data-astro-cid-x3pjskd3> <path d="M1.5 3L5 7L8.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" data-astro-cid-x3pjskd3></path> </svg> </button> <ul class="theme-dropdown" role="listbox" aria-label="Theme options" data-theme-toggle-dropdown hidden data-astro-cid-x3pjskd3> <li class="theme-dropdown-option" role="option" data-theme-option="system" tabindex="-1" data-astro-cid-x3pjskd3>Auto</li> <li class="theme-dropdown-option" role="option" data-theme-option="light" tabindex="-1" data-astro-cid-x3pjskd3>Light</li> <li class="theme-dropdown-option" role="option" data-theme-option="dark" tabindex="-1" data-astro-cid-x3pjskd3>Dark</li> </ul> </div> <script>
+  (() => {
+    const labels = { system: 'Auto', light: 'Light', dark: 'Dark' };
+
+    const mainButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    const arrowButtons = Array.from(document.querySelectorAll('[data-theme-toggle-arrow]'));
+    const dropdowns = Array.from(document.querySelectorAll('[data-theme-toggle-dropdown]'));
+
+    if (!mainButtons.length) return;
+
+    const getApi = () => window.__semnoteTheme;
+    const getPreference = () => getApi()?.getPreference?.() ?? 'system';
+    const getResolvedTheme = () => getApi()?.getResolvedTheme?.() ?? 'light';
+
+    // Main click cycles only light <-> dark (system is accessible via dropdown)
+    const getNextLightDark = (current) => (current === 'light' ? 'dark' : 'light');
+
+    const render = () => {
+      const preference = getPreference();
+      const resolvedTheme = getResolvedTheme();
+
+      mainButtons.forEach((btn) => {
+        const label = btn.querySelector('[data-theme-toggle-label]');
+        if (label) label.textContent = labels[preference];
+        btn.dataset.preference = preference;
+        btn.dataset.resolvedTheme = resolvedTheme;
+        btn.setAttribute('aria-label', `Theme: ${labels[preference]}. Click to toggle light/dark.`);
+      });
+
+      dropdowns.forEach((dd) => {
+        dd.querySelectorAll('[data-theme-option]').forEach((opt) => {
+          const selected = opt.dataset.themeOption === preference;
+          opt.setAttribute('aria-selected', String(selected));
+          opt.classList.toggle('is-selected', selected);
+        });
+      });
+    };
+
+    const openDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = false;
+      arrowBtn.setAttribute('aria-expanded', 'true');
+      const first = dropdown.querySelector('[data-theme-option]');
+      if (first) first.focus();
+    };
+
+    const closeDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = true;
+      arrowBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    const closeAllDropdowns = () => {
+      arrowButtons.forEach((ab, i) => closeDropdown(ab, dropdowns[i]));
+    };
+
+    // Main button: long-press opens dropdown; short click cycles light/dark
+    mainButtons.forEach((btn, i) => {
+      let longPressTimer = null;
+      let longPressCompleted = false;
+
+      const startLongPress = () => {
+        longPressCompleted = false;
+        longPressTimer = setTimeout(() => {
+          longPressCompleted = true;
+          longPressTimer = null;
+          closeAllDropdowns();
+          if (arrowButtons[i]) openDropdown(arrowButtons[i], dropdowns[i]);
+        }, 500);
+      };
+
+      const cancelLongPress = () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      };
+
+      btn.addEventListener('mousedown', startLongPress);
+      btn.addEventListener('touchstart', startLongPress, { passive: true });
+      btn.addEventListener('mouseup', cancelLongPress);
+      btn.addEventListener('touchend', cancelLongPress);
+      btn.addEventListener('mouseleave', cancelLongPress);
+
+      btn.addEventListener('click', () => {
+        if (longPressCompleted) { longPressCompleted = false; return; }
+        getApi()?.setPreference?.(getNextLightDark(getPreference()));
+      });
+    });
+
+    // Arrow button: toggle dropdown
+    arrowButtons.forEach((arrowBtn, i) => {
+      arrowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = dropdowns[i];
+        if (dropdown.hidden) {
+          closeAllDropdowns();
+          openDropdown(arrowBtn, dropdown);
+        } else {
+          closeDropdown(arrowBtn, dropdown);
+        }
+      });
+    });
+
+    // Dropdown options: click to select, keyboard navigation
+    dropdowns.forEach((dropdown, i) => {
+      const arrowBtn = arrowButtons[i];
+      dropdown.querySelectorAll('[data-theme-option]').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          getApi()?.setPreference?.(opt.dataset.themeOption);
+          closeDropdown(arrowBtn, dropdown);
+          mainButtons[i]?.focus();
+        });
+
+        opt.addEventListener('keydown', (e) => {
+          const options = Array.from(dropdown.querySelectorAll('[data-theme-option]'));
+          const idx = options.indexOf(e.target);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            options[(idx + 1) % options.length]?.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            options[(idx - 1 + options.length) % options.length]?.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            opt.click();
+          } else if (e.key === 'Escape' || e.key === 'Tab') {
+            closeDropdown(arrowBtn, dropdown);
+            mainButtons[i]?.focus();
+          }
+        });
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      arrowButtons.forEach((ab, i) => {
+        const dd = dropdowns[i];
+        if (!dd.hidden && !dd.contains(e.target) && e.target !== ab) {
+          closeDropdown(ab, dd);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    window.addEventListener('semnote:themechange', render);
+    render();
+  })();
+</script> </div> </nav> </header> <main id="main-content" class="site-main" data-astro-cid-37fxchfa>  <section class="utility-shell" data-astro-cid-ipsxrsrh> <p class="utility-kicker" data-astro-cid-ipsxrsrh>Search</p> <h1 data-astro-cid-ipsxrsrh>Find content by title, route, or summary.</h1> <p class="utility-lede" data-astro-cid-ipsxrsrh>Search is generated from the same content source tree that powers the public routes.</p> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).only=e;window.dispatchEvent(new Event("astro:only"));})();</script><script>(()=>{var g=Object.defineProperty;var w=(c,s,d)=>s in c?g(c,s,{enumerable:!0,configurable:!0,writable:!0,value:d}):c[s]=d;var l=(c,s,d)=>w(c,typeof s!="symbol"?s+"":s,d);var E=new Set(["__proto__","constructor","prototype"]);{let c={0:t=>y(t),1:t=>d(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(d(t)),5:t=>new Set(d(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>Number.POSITIVE_INFINITY*t},s=t=>{let[p,e]=t;return p in c?c[p](e):void 0},d=t=>t.map(s),y=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([p,e])=>[p,s(e)]));class f extends HTMLElement{constructor(){super(...arguments);l(this,"Component");l(this,"hydrator");l(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let n=this.querySelectorAll("astro-slot"),r={},i=this.querySelectorAll("template[data-astro-template]");for(let o of i){let a=o.closest(this.tagName);a!=null&&a.isSameNode(this)&&(r[o.getAttribute("data-astro-template")||"default"]=o.innerHTML,o.remove())}for(let o of n){let a=o.closest(this.tagName);a!=null&&a.isSameNode(this)&&(r[o.getAttribute("name")||"default"]=o.innerHTML)}let u;try{u=this.hasAttribute("props")?y(JSON.parse(this.getAttribute("props"))):{}}catch(o){let a=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(a+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${a}`,this.getAttribute("props"),o),o}let h;await this.hydrator(this)(this.Component,u,r,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});l(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),n.disconnect(),this.childrenConnectedCallback()},n=new MutationObserver(()=>{var r;((r=this.lastChild)==null?void 0:r.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});n.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}getRetryImportUrl(e){let n=new URL(e,document.baseURI),r=`astro-retry=${Date.now()}`,i=n.hash.replace(/^#/,"");return n.hash=i?`${i}&${r}`:r,n.toString()}async importWithRetry(e){try{return await import(e)}catch(n){return await new Promise(r=>setTimeout(r,1e3)),import(this.getRetryImportUrl(e))}}handleHydrationError(e){let n=this.getAttribute("component-url"),r=new CustomEvent("astro:hydration-error",{cancelable:!0,bubbles:!0,composed:!0,detail:{error:e,componentUrl:n}});this.dispatchEvent(r)&&console.error(`[astro-island] Error hydrating ${n}`,e)}async start(){let e=JSON.parse(this.getAttribute("opts")),n=this.getAttribute("client");if(Astro[n]===void 0){window.addEventListener(`astro:${n}`,()=>this.start(),{once:!0});return}try{await Astro[n](async()=>{let r=this.getAttribute("renderer-url");try{let[i,{default:u}]=await Promise.all([this.importWithRetry(this.getAttribute("component-url")),r?this.importWithRetry(r):Promise.resolve({default:()=>()=>{}})]),h=this.getAttribute("component-export")||"default";if(h.includes(".")){this.Component=i;for(let m of h.split(".")){if(E.has(m)||!this.Component||typeof this.Component!="object"&&typeof this.Component!="function"||!Object.hasOwn(this.Component,m))throw new Error(`Invalid component export path: ${h}`);this.Component=this.Component[m]}}else{if(E.has(h))throw new Error(`Invalid component export path: ${h}`);this.Component=i[h]}return this.hydrator=u,this.hydrate}catch(i){return this.handleHydrationError(i),()=>{}}},e,this)}catch(r){this.handleHydrationError(r)}}attributeChangedCallback(){this.hydrate()}}l(f,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",f)}})();</script><astro-island uid="18sqEb" component-url="/_astro/SearchIsland.BMtYvwrF.js" component-export="default" renderer-url="/_astro/client.D_7nQosA.js" props="{&quot;autofocus&quot;:[0,true],&quot;data-astro-cid-ipsxrsrh&quot;:[0,true]}" ssr client="only" opts="{&quot;name&quot;:&quot;SearchIsland&quot;,&quot;value&quot;:&quot;solid-js&quot;}"></astro-island> </section>  </main> <footer class="site-footer surface-default" data-astro-cid-sz7xmlte> <div class="site-footer__inner" data-astro-cid-sz7xmlte> <p class="site-footer__lead" data-astro-cid-sz7xmlte>
+Semnote Writer keeps documents readable in source form, structured for reuse, and portable enough to outlast a single tool.
+</p> <div class="site-footer__links" data-astro-cid-sz7xmlte> <a href="/contact" data-astro-cid-sz7xmlte>Contact</a> <a href="/privacy" data-astro-cid-sz7xmlte>Privacy</a> <a href="/terms" data-astro-cid-sz7xmlte>Terms</a> </div> <p class="site-footer__meta" data-astro-cid-sz7xmlte>
+Copyright &copy; 2026 Leanersoft
+</p> </div> </footer></body></html>

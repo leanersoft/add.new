@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Accounts, payments, terms, conditions, licensing, warranty disclaimer"><title>Terms of Service — ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/writer/lora-normal-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
+    });
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><link rel="stylesheet" href="/_astro/_..BMVaBhIj.css">
+<link rel="stylesheet" href="/_astro/BaseLayout.CMjirWmf.css">
+<link rel="stylesheet" href="/_astro/global.BQXuNs0x.css"></head> <body data-astro-cid-37fxchfa> <a href="#main-content" class="skip-link" data-astro-cid-37fxchfa>Skip to content</a> <header class="site-header" data-astro-cid-3ef6ksr2> <nav class="site-nav" aria-label="Primary" data-astro-cid-3ef6ksr2> <a href="/" class="brand-mark" data-astro-cid-3ef6ksr2> <span class="brand-eyebrow" data-astro-cid-3ef6ksr2>ADD.NEW</span> <span class="brand-title" data-astro-cid-3ef6ksr2></span> </a> <div class="nav-links" data-astro-cid-3ef6ksr2> <a href="/contact" data-astro-cid-3ef6ksr2> Contact </a><a href="/" data-astro-cid-3ef6ksr2> Writer </a> </div> <div class="nav-tools" data-astro-cid-3ef6ksr2> <!-- Theme toggle: click main button to cycle light/dark; arrow or long-press opens full menu --><div class="theme-toggle-wrap" role="group" aria-label="Theme preference" data-astro-cid-x3pjskd3> <button class="theme-toggle-main" type="button" data-theme-toggle aria-label="Theme: Auto. Click to toggle light/dark." data-astro-cid-x3pjskd3> <span class="theme-toggle-icon" aria-hidden="true" data-astro-cid-x3pjskd3></span> <span class="theme-toggle-label" data-theme-toggle-label data-astro-cid-x3pjskd3>Auto</span> </button> <span class="theme-toggle-divider" aria-hidden="true" data-astro-cid-x3pjskd3></span> <button class="theme-toggle-arrow" type="button" data-theme-toggle-arrow aria-label="More theme options" aria-expanded="false" aria-haspopup="listbox" data-astro-cid-x3pjskd3> <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false" data-astro-cid-x3pjskd3> <path d="M1.5 3L5 7L8.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" data-astro-cid-x3pjskd3></path> </svg> </button> <ul class="theme-dropdown" role="listbox" aria-label="Theme options" data-theme-toggle-dropdown hidden data-astro-cid-x3pjskd3> <li class="theme-dropdown-option" role="option" data-theme-option="system" tabindex="-1" data-astro-cid-x3pjskd3>Auto</li> <li class="theme-dropdown-option" role="option" data-theme-option="light" tabindex="-1" data-astro-cid-x3pjskd3>Light</li> <li class="theme-dropdown-option" role="option" data-theme-option="dark" tabindex="-1" data-astro-cid-x3pjskd3>Dark</li> </ul> </div> <script>
+  (() => {
+    const labels = { system: 'Auto', light: 'Light', dark: 'Dark' };
+
+    const mainButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    const arrowButtons = Array.from(document.querySelectorAll('[data-theme-toggle-arrow]'));
+    const dropdowns = Array.from(document.querySelectorAll('[data-theme-toggle-dropdown]'));
+
+    if (!mainButtons.length) return;
+
+    const getApi = () => window.__semnoteTheme;
+    const getPreference = () => getApi()?.getPreference?.() ?? 'system';
+    const getResolvedTheme = () => getApi()?.getResolvedTheme?.() ?? 'light';
+
+    // Main click cycles only light <-> dark (system is accessible via dropdown)
+    const getNextLightDark = (current) => (current === 'light' ? 'dark' : 'light');
+
+    const render = () => {
+      const preference = getPreference();
+      const resolvedTheme = getResolvedTheme();
+
+      mainButtons.forEach((btn) => {
+        const label = btn.querySelector('[data-theme-toggle-label]');
+        if (label) label.textContent = labels[preference];
+        btn.dataset.preference = preference;
+        btn.dataset.resolvedTheme = resolvedTheme;
+        btn.setAttribute('aria-label', `Theme: ${labels[preference]}. Click to toggle light/dark.`);
+      });
+
+      dropdowns.forEach((dd) => {
+        dd.querySelectorAll('[data-theme-option]').forEach((opt) => {
+          const selected = opt.dataset.themeOption === preference;
+          opt.setAttribute('aria-selected', String(selected));
+          opt.classList.toggle('is-selected', selected);
+        });
+      });
+    };
+
+    const openDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = false;
+      arrowBtn.setAttribute('aria-expanded', 'true');
+      const first = dropdown.querySelector('[data-theme-option]');
+      if (first) first.focus();
+    };
+
+    const closeDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = true;
+      arrowBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    const closeAllDropdowns = () => {
+      arrowButtons.forEach((ab, i) => closeDropdown(ab, dropdowns[i]));
+    };
+
+    // Main button: long-press opens dropdown; short click cycles light/dark
+    mainButtons.forEach((btn, i) => {
+      let longPressTimer = null;
+      let longPressCompleted = false;
+
+      const startLongPress = () => {
+        longPressCompleted = false;
+        longPressTimer = setTimeout(() => {
+          longPressCompleted = true;
+          longPressTimer = null;
+          closeAllDropdowns();
+          if (arrowButtons[i]) openDropdown(arrowButtons[i], dropdowns[i]);
+        }, 500);
+      };
+
+      const cancelLongPress = () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      };
+
+      btn.addEventListener('mousedown', startLongPress);
+      btn.addEventListener('touchstart', startLongPress, { passive: true });
+      btn.addEventListener('mouseup', cancelLongPress);
+      btn.addEventListener('touchend', cancelLongPress);
+      btn.addEventListener('mouseleave', cancelLongPress);
+
+      btn.addEventListener('click', () => {
+        if (longPressCompleted) { longPressCompleted = false; return; }
+        getApi()?.setPreference?.(getNextLightDark(getPreference()));
+      });
+    });
+
+    // Arrow button: toggle dropdown
+    arrowButtons.forEach((arrowBtn, i) => {
+      arrowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = dropdowns[i];
+        if (dropdown.hidden) {
+          closeAllDropdowns();
+          openDropdown(arrowBtn, dropdown);
+        } else {
+          closeDropdown(arrowBtn, dropdown);
+        }
+      });
+    });
+
+    // Dropdown options: click to select, keyboard navigation
+    dropdowns.forEach((dropdown, i) => {
+      const arrowBtn = arrowButtons[i];
+      dropdown.querySelectorAll('[data-theme-option]').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          getApi()?.setPreference?.(opt.dataset.themeOption);
+          closeDropdown(arrowBtn, dropdown);
+          mainButtons[i]?.focus();
+        });
+
+        opt.addEventListener('keydown', (e) => {
+          const options = Array.from(dropdown.querySelectorAll('[data-theme-option]'));
+          const idx = options.indexOf(e.target);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            options[(idx + 1) % options.length]?.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            options[(idx - 1 + options.length) % options.length]?.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            opt.click();
+          } else if (e.key === 'Escape' || e.key === 'Tab') {
+            closeDropdown(arrowBtn, dropdown);
+            mainButtons[i]?.focus();
+          }
+        });
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      arrowButtons.forEach((ab, i) => {
+        const dd = dropdowns[i];
+        if (!dd.hidden && !dd.contains(e.target) && e.target !== ab) {
+          closeDropdown(ab, dd);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    window.addEventListener('semnote:themechange', render);
+    render();
+  })();
+</script> </div> </nav> </header> <main id="main-content" class="site-main" data-astro-cid-37fxchfa>  <article class="legal-layout surface-default" data-astro-cid-dpidqgiz> <header class="legal-header" data-astro-cid-dpidqgiz> <p class="legal-kicker" data-astro-cid-dpidqgiz>Legal</p> <h1 data-astro-cid-dpidqgiz>Terms of Service</h1> <p class="legal-lede" data-astro-cid-dpidqgiz>Accounts, payments, terms, conditions, licensing, warranty disclaimer</p> </header> <div class="prose legal-prose" data-astro-cid-dpidqgiz>  
+<div>
+  <div>
+    <blockquote>When we say “we”, “our”, “us”, “company”, “service” or “services” in this document, we are referring to Leanersoft and this website. When we say “you” or “your”, we mean the person or organisation using our website, app or services.</blockquote>
+  </div>
+  <div>
+    <blockquote>By using our service, you agree to these Terms of Service. If you do not agree with these terms, please do not use the service.</blockquote>
+  </div>
+  <div>
+    <blockquote>We may update these terms from time to time. When we make significant changes, we may notify you by email, in the app, or on our website. Your continued use of the service means you agree to the latest version of these terms.</blockquote>
+  </div>
+  <div>
+    <h2>Account terms</h2>
+  </div>
+  <p>You don’t have to create an account to use Semnote Writer or the ADD.NEW website.</p>
+  <p>If you do create it, you are responsible for keeping your account secure. This includes protecting your password and controlling access to your account.</p>
+  <p>You are responsible for all activity that happens under your account, including activity by people you invite or allow to use it.</p>
+  <p>You must not use the service for illegal purposes or to violate any laws in your jurisdiction.</p>
+  <p>You must provide accurate information when creating an account, subscribing to a plan, or communicating with us.</p>
+  <div>
+    <h2>Payment, trials and subscriptions</h2>
+  </div>
+  <p>Some parts of the service may be free, and others may require payment.</p>
+  <p>If we offer a free trial, the trial length and conditions will be explained when you sign up. After the trial ends, you may need to choose a paid plan to continue using paid features.</p>
+  <p>Paid plans are billed in advance on the billing cycle shown at checkout or in your account settings.</p>
+  <p>You are responsible for keeping your billing information up to date. If payment fails, we may suspend or restrict access to paid features until payment is completed.</p>
+  <p>You may upgrade, downgrade or cancel your plan according to the options available in your account settings. Downgrading may reduce your access to certain features, limits, storage or functionality.</p>
+  <p>Unless stated otherwise, fees are non-refundable, except where required by law.</p>
+  <p>Taxes may be added where applicable.</p>
+  <div>
+    <h2>Cancellation and termination</h2>
+  </div>
+  <p>You are responsible for properly cancelling your subscription or account through the available cancellation process. Sending an email may not be enough to cancel if a self-service cancellation option is available.</p>
+  <p>If you cancel a paid subscription before the end of the current billing period, your access to paid features will usually continue until the end of that billing period. You will not be charged again after cancellation unless you restart or create a new subscription.</p>
+  <p>You may delete your account. Deleting your account may permanently remove your data. Some data may remain in backups for a limited time before being deleted.</p>
+  <p>We may suspend or terminate your account if you violate these terms, misuse the service, create risk for us or other users, or use the service in a harmful or unlawful way.</p>
+  <p>Abuse, threats, harassment or disrespectful behaviour towards our team, contractors, customers or users may result in immediate account termination.</p>
+  <div>
+    <h2>Changes to the service and pricing</h2>
+  </div>
+  <p>We may modify, suspend or discontinue any part of the service at any time.</p>
+  <p>We may change our pricing, plans, features or limits.</p>
+  <p>If a price change affects existing paying customers, we will make reasonable efforts to notify them in advance.</p>
+  <p>We are not liable to you or any third party for changes, price updates, suspension or discontinuation of the service.</p>
+  <div>
+    <h2>Content and ownership</h2>
+  </div>
+  <p>You are responsible for any content, data, files, text, images, information or material that you upload, submit, publish or otherwise make available through the service.</p>
+  <p>You retain ownership of your content. By using the service, you give us the rights necessary to host, process, display, transmit and operate your content solely as needed to provide the service.</p>
+  <p>You must not upload or share content that is illegal, harmful, abusive, infringing, misleading or violates the rights of others.</p>
+  <p>You may send us feedback, ideas or suggestions. We may use that feedback without restriction or compensation.</p>
+  <p>The service, including its design, software, branding, text, graphics and other materials, is protected by copyright, trademark and other laws. You must not copy, resell, exploit or falsely imply association with us without permission.</p>
+  <div>
+    <h2>Privacy and security</h2>
+  </div>
+  <p>We take reasonable measures to protect your data, including technical and organisational safeguards such as backups, access controls and encryption where appropriate.</p>
+  <p>You retain ownership of your data. We do not sell your data.</p>
+  <p>We may process your data as described in our Privacy Policy and any applicable data processing terms.</p>
+  <p>We may share data with trusted service providers where necessary to operate, maintain, secure and improve the service. These providers may include hosting, payment, email, and infrastructure providers.</p>
+  <p>You must not use the service to submit highly sensitive information unless we have clearly stated that the service is designed for that purpose. This may include credit card numbers, government identifiers, financial account details, health information, precise real-time location data or other sensitive personal data.</p>
+  <p>Each party agrees to handle personal data in accordance with applicable laws.</p>
+  <div>
+    <h2>General conditions</h2>
+  </div>
+  <p>Your use of the service is at your own risk.</p>
+  <p>The service is provided on an “as is” and “as available” basis.</p>
+  <p>We do not guarantee that the service will be uninterrupted, error-free, secure or available at all times.</p>
+  <p>We do not guarantee that the service will meet your specific needs or expectations.</p>
+  <p>Support may be provided by email, chat or other channels, depending on your plan and our available support options. We provide support on a reasonable-effort basis.</p>
+  <p>Our authorised team members and service providers may access your account or data when necessary to provide support, maintain the service, investigate issues, prevent abuse, comply with legal obligations or protect the service.</p>
+  <p>You must not attempt to disrupt, overload, reverse engineer, abuse, scrape, bypass security measures or interfere with the service.</p>
+  <div>
+    <h2>Liability</h2>
+  </div>
+  <p>To the maximum extent permitted by law, we are not liable for indirect, incidental, special, consequential or exemplary damages, including loss of profits, revenue, data, goodwill or business opportunities.</p>
+  <p>To the maximum extent permitted by law, our total liability for any claim related to the service is limited to the amount you paid us for the service during the 6 months before the claim arose.</p>
+  <p>Some jurisdictions do not allow certain limitations of liability, so some of these limitations may not apply to you.</p>
+  <div>
+    <h2>Governing law</h2>
+  </div>
+  <p>These terms are governed by the laws of Ireland, unless applicable consumer protection laws require otherwise.</p>
+  <p>Any disputes will be handled by the courts or dispute resolution process applicable in Ireland, unless the law requires another venue.</p>
+  <div>
+    <h2>Contact us</h2>
+  </div>
+  <p>If you have questions about these Terms of Service, <a href="/contact">get in touch</a>.</p>
+  <p><em>Last</em> <em>updated:</em> <em><code>#last updated</code></em><em>.</em></p>
+</div>
+  </div> </article>  </main> <footer class="site-footer surface-default" data-astro-cid-sz7xmlte> <div class="site-footer__inner" data-astro-cid-sz7xmlte> <p class="site-footer__lead" data-astro-cid-sz7xmlte>
+Semnote Writer keeps documents readable in source form, structured for reuse, and portable enough to outlast a single tool.
+</p> <div class="site-footer__links" data-astro-cid-sz7xmlte> <a href="/contact" data-astro-cid-sz7xmlte>Contact</a> <a href="/privacy" data-astro-cid-sz7xmlte>Privacy</a> <a href="/terms" data-astro-cid-sz7xmlte>Terms</a> </div> <p class="site-footer__meta" data-astro-cid-sz7xmlte>
+Copyright &copy; 2026 Leanersoft
+</p> </div> </footer></body></html>

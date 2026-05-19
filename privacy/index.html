@@ -1,0 +1,453 @@
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="This site does not include third-party analytics, advertising pixels, hosted chat widgets, or remote font CDNs."><title>Privacy Policy — ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/writer/lora-normal-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/SpaceMono-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
+    });
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><link rel="stylesheet" href="/_astro/_..BMVaBhIj.css">
+<link rel="stylesheet" href="/_astro/BaseLayout.CMjirWmf.css">
+<link rel="stylesheet" href="/_astro/global.BQXuNs0x.css"></head> <body data-astro-cid-37fxchfa> <a href="#main-content" class="skip-link" data-astro-cid-37fxchfa>Skip to content</a> <header class="site-header" data-astro-cid-3ef6ksr2> <nav class="site-nav" aria-label="Primary" data-astro-cid-3ef6ksr2> <a href="/" class="brand-mark" data-astro-cid-3ef6ksr2> <span class="brand-eyebrow" data-astro-cid-3ef6ksr2>ADD.NEW</span> <span class="brand-title" data-astro-cid-3ef6ksr2></span> </a> <div class="nav-links" data-astro-cid-3ef6ksr2> <a href="/contact" data-astro-cid-3ef6ksr2> Contact </a><a href="/" data-astro-cid-3ef6ksr2> Writer </a> </div> <div class="nav-tools" data-astro-cid-3ef6ksr2> <!-- Theme toggle: click main button to cycle light/dark; arrow or long-press opens full menu --><div class="theme-toggle-wrap" role="group" aria-label="Theme preference" data-astro-cid-x3pjskd3> <button class="theme-toggle-main" type="button" data-theme-toggle aria-label="Theme: Auto. Click to toggle light/dark." data-astro-cid-x3pjskd3> <span class="theme-toggle-icon" aria-hidden="true" data-astro-cid-x3pjskd3></span> <span class="theme-toggle-label" data-theme-toggle-label data-astro-cid-x3pjskd3>Auto</span> </button> <span class="theme-toggle-divider" aria-hidden="true" data-astro-cid-x3pjskd3></span> <button class="theme-toggle-arrow" type="button" data-theme-toggle-arrow aria-label="More theme options" aria-expanded="false" aria-haspopup="listbox" data-astro-cid-x3pjskd3> <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false" data-astro-cid-x3pjskd3> <path d="M1.5 3L5 7L8.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" data-astro-cid-x3pjskd3></path> </svg> </button> <ul class="theme-dropdown" role="listbox" aria-label="Theme options" data-theme-toggle-dropdown hidden data-astro-cid-x3pjskd3> <li class="theme-dropdown-option" role="option" data-theme-option="system" tabindex="-1" data-astro-cid-x3pjskd3>Auto</li> <li class="theme-dropdown-option" role="option" data-theme-option="light" tabindex="-1" data-astro-cid-x3pjskd3>Light</li> <li class="theme-dropdown-option" role="option" data-theme-option="dark" tabindex="-1" data-astro-cid-x3pjskd3>Dark</li> </ul> </div> <script>
+  (() => {
+    const labels = { system: 'Auto', light: 'Light', dark: 'Dark' };
+
+    const mainButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+    const arrowButtons = Array.from(document.querySelectorAll('[data-theme-toggle-arrow]'));
+    const dropdowns = Array.from(document.querySelectorAll('[data-theme-toggle-dropdown]'));
+
+    if (!mainButtons.length) return;
+
+    const getApi = () => window.__semnoteTheme;
+    const getPreference = () => getApi()?.getPreference?.() ?? 'system';
+    const getResolvedTheme = () => getApi()?.getResolvedTheme?.() ?? 'light';
+
+    // Main click cycles only light <-> dark (system is accessible via dropdown)
+    const getNextLightDark = (current) => (current === 'light' ? 'dark' : 'light');
+
+    const render = () => {
+      const preference = getPreference();
+      const resolvedTheme = getResolvedTheme();
+
+      mainButtons.forEach((btn) => {
+        const label = btn.querySelector('[data-theme-toggle-label]');
+        if (label) label.textContent = labels[preference];
+        btn.dataset.preference = preference;
+        btn.dataset.resolvedTheme = resolvedTheme;
+        btn.setAttribute('aria-label', `Theme: ${labels[preference]}. Click to toggle light/dark.`);
+      });
+
+      dropdowns.forEach((dd) => {
+        dd.querySelectorAll('[data-theme-option]').forEach((opt) => {
+          const selected = opt.dataset.themeOption === preference;
+          opt.setAttribute('aria-selected', String(selected));
+          opt.classList.toggle('is-selected', selected);
+        });
+      });
+    };
+
+    const openDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = false;
+      arrowBtn.setAttribute('aria-expanded', 'true');
+      const first = dropdown.querySelector('[data-theme-option]');
+      if (first) first.focus();
+    };
+
+    const closeDropdown = (arrowBtn, dropdown) => {
+      dropdown.hidden = true;
+      arrowBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    const closeAllDropdowns = () => {
+      arrowButtons.forEach((ab, i) => closeDropdown(ab, dropdowns[i]));
+    };
+
+    // Main button: long-press opens dropdown; short click cycles light/dark
+    mainButtons.forEach((btn, i) => {
+      let longPressTimer = null;
+      let longPressCompleted = false;
+
+      const startLongPress = () => {
+        longPressCompleted = false;
+        longPressTimer = setTimeout(() => {
+          longPressCompleted = true;
+          longPressTimer = null;
+          closeAllDropdowns();
+          if (arrowButtons[i]) openDropdown(arrowButtons[i], dropdowns[i]);
+        }, 500);
+      };
+
+      const cancelLongPress = () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      };
+
+      btn.addEventListener('mousedown', startLongPress);
+      btn.addEventListener('touchstart', startLongPress, { passive: true });
+      btn.addEventListener('mouseup', cancelLongPress);
+      btn.addEventListener('touchend', cancelLongPress);
+      btn.addEventListener('mouseleave', cancelLongPress);
+
+      btn.addEventListener('click', () => {
+        if (longPressCompleted) { longPressCompleted = false; return; }
+        getApi()?.setPreference?.(getNextLightDark(getPreference()));
+      });
+    });
+
+    // Arrow button: toggle dropdown
+    arrowButtons.forEach((arrowBtn, i) => {
+      arrowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = dropdowns[i];
+        if (dropdown.hidden) {
+          closeAllDropdowns();
+          openDropdown(arrowBtn, dropdown);
+        } else {
+          closeDropdown(arrowBtn, dropdown);
+        }
+      });
+    });
+
+    // Dropdown options: click to select, keyboard navigation
+    dropdowns.forEach((dropdown, i) => {
+      const arrowBtn = arrowButtons[i];
+      dropdown.querySelectorAll('[data-theme-option]').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          getApi()?.setPreference?.(opt.dataset.themeOption);
+          closeDropdown(arrowBtn, dropdown);
+          mainButtons[i]?.focus();
+        });
+
+        opt.addEventListener('keydown', (e) => {
+          const options = Array.from(dropdown.querySelectorAll('[data-theme-option]'));
+          const idx = options.indexOf(e.target);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            options[(idx + 1) % options.length]?.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            options[(idx - 1 + options.length) % options.length]?.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            opt.click();
+          } else if (e.key === 'Escape' || e.key === 'Tab') {
+            closeDropdown(arrowBtn, dropdown);
+            mainButtons[i]?.focus();
+          }
+        });
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      arrowButtons.forEach((ab, i) => {
+        const dd = dropdowns[i];
+        if (!dd.hidden && !dd.contains(e.target) && e.target !== ab) {
+          closeDropdown(ab, dd);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    window.addEventListener('semnote:themechange', render);
+    render();
+  })();
+</script> </div> </nav> </header> <main id="main-content" class="site-main" data-astro-cid-37fxchfa>  <article class="legal-layout surface-default" data-astro-cid-dpidqgiz> <header class="legal-header" data-astro-cid-dpidqgiz> <p class="legal-kicker" data-astro-cid-dpidqgiz>Legal</p> <h1 data-astro-cid-dpidqgiz>Privacy Policy</h1> <p class="legal-lede" data-astro-cid-dpidqgiz>This site does not include third-party analytics, advertising pixels, hosted chat widgets, or remote font CDNs.</p> </header> <div class="prose legal-prose" data-astro-cid-dpidqgiz>  
+<div>
+  <p>This Privacy Policy explains what information we collect, why we collect it, how we handle and use it, and what rights you have.</p>
+  <p>When we say “we”, “us”, “our”, “app”, “website” or “service”, we mean Leanersoft. When we say “you” or “your”, we mean the person using our website, app or services.</p>
+  <p>For unauthenticated ADD.NEW website visitors, we do not use cookies and we do not collect any personal data.</p>
+  <p>If you decide to create an account, we ask for the bare minimum and only share it with services that are absolutely necessary for the app to function.</p>
+  <p>At Leanersoft, we care about your privacy and try to collect as little personal information as possible. Your data is yours, not ours.</p>
+  <p>We are committed to complying with GDPR, CCPA, PECR and other privacy regulations on our website and in our Semnote Writer product.</p>
+  <p>We promise that we do not sell your data. We never have, and we never will.</p>
+  <p>We collect only the information we need to provide, secure, improve, and support the service.</p>
+  <div>
+    <h2>What we collect and why</h2>
+  </div>
+  <div>
+    <h3>Identity and account information</h3>
+  </div>
+  <p>When you create an account, we may ask for your name, email address, and password.</p>
+  <p>We use this information to create your account, let you log in, send important service emails, provide support, and keep your account secure.</p>
+  <div>
+    <h3>Billing information</h3>
+  </div>
+  <p>If you subscribe to a paid plan, our payment provider processes your payment details.</p>
+  <p>We do not store your full card details. We may store billing-related information such as your billing email, plan, payment status, invoices, and transaction history.</p>
+  <p>We use this information to manage your subscription, process payments, issue invoices, and comply with accounting and tax requirements.</p>
+  <div>
+    <h3>Product data</h3>
+  </div>
+  <p>When you use the service, we store the content and data you choose to create, upload, save, or manage inside the app.</p>
+  <p>We use this data only to provide the service to you. You remain the owner of your content and data.</p>
+  <div>
+    <h3>Support emails and messages</h3>
+  </div>
+  <p>If you contact us, we keep your message and contact details so we can reply and help you.</p>
+  <p>We may also use past conversations to improve our documentation, product, and support process.</p>
+  <div>
+    <h3>Website and app usage</h3>
+  </div>
+  <p>We may collect simple non-personalized usage information to understand how people use our website and app.</p>
+  <p>We use privacy-friendly <a href="https://plausible.io">Plausible Analytics</a>. We avoid invasive tracking, advertising profiles, and cross-site tracking.</p>
+  <p>We use this information to understand what is useful, fix problems, and improve the service.</p>
+  <div>
+    <h3>Security and technical logs</h3>
+  </div>
+  <p>Like most online services, we may collect basic technical logs such as IP address, browser type, device information, timestamps, and actions taken in the service.</p>
+  <p>We use this information to keep the service secure, prevent abuse, investigate errors, and maintain reliability.</p>
+  <div>
+    <h2>How your data is processed and used</h2>
+  </div>
+  <div>
+    <blockquote>
+      <ul>
+        <li>We do not sell your data</li>
+        <li>We do not sell, rent, or trade your personal information</li>
+        <li>We do not use your data for advertising profiles</li>
+        <li>We do not share your data with advertisers</li>
+      </ul>
+    </blockquote>
+  </div>
+  <div>
+    <h2>Why we collect data</h2>
+  </div>
+  <p>We use your data to:</p>
+  <ul>
+    <li>provide, operate and improve the service</li>
+    <li>create and manage your account</li>
+    <li>process payments and subscriptions</li>
+    <li>provide customer support</li>
+    <li>send important service messages</li>
+    <li>protect the service from abuse, fraud and security risks</li>
+    <li>understand how the website and app are used</li>
+    <li>comply with legal obligations</li>
+  </ul>
+  <p>We only collect data when we have a reason to do so.</p>
+  <div>
+    <h2>Cookies and similar technologies</h2>
+  </div>
+  <p>We try to avoid unnecessary cookies.</p>
+  <p>We may use essential cookies or similar technologies when they are needed for the service to work, such as keeping you logged in or remembering your preferences.</p>
+  <p>If we ever use non-essential cookies, we will explain what they are for and ask for consent where required.</p>
+  <div>
+    <h3>Who can access your data</h3>
+  </div>
+  <p>Access to your data is limited to people and service providers who need it to run, support, secure, or improve the service.</p>
+  <p>We may use trusted providers for hosting, email, payments, backups, security, and infrastructure.</p>
+  <p>These providers may only process your data for the purpose of providing their services to us.</p>
+  <p>We may also disclose information if required by law, to protect our rights, to prevent abuse, or to protect the security of the service.</p>
+  <div>
+    <h3>How we protect your data</h3>
+  </div>
+  <p>We take reasonable steps to protect your data through access controls, backups, encryption where appropriate, monitoring, and security practices.</p>
+  <p>No online service can guarantee perfect security, but we work to protect your data and limit access to it.</p>
+  <div>
+    <h3>Where your data is stored</h3>
+  </div>
+  <p>All of the data that we collect is kept fully secured, encrypted and hosted on servers in Germany. Your site data never leaves the EU.</p>
+  <p>Where we use third-party providers outside the European Union, we ensure appropriate safeguards are in place, such as Standard Contractual Clauses approved by the European Commission.</p>
+  <div>
+    <h3>How long we keep your data</h3>
+  </div>
+  <p>We keep your data only for as long as needed to provide the service, comply with legal obligations, resolve disputes, prevent abuse, and maintain business records.</p>
+  <p>If you delete your account, we will delete or anonymise your personal data within a reasonable time, unless we need to keep some information for legal, tax, accounting, security, or fraud-prevention reasons.</p>
+  <p>Backups may keep deleted data for a limited period before it is permanently removed.</p>
+  <div>
+    <h2>Your rights</h2>
+  </div>
+  <p>You have the right to:</p>
+  <ul>
+    <li>Access your personal data</li>
+    <li>Correct inaccurate data</li>
+    <li>Request deletion of your data</li>
+    <li>Export your data</li>
+    <li>Object to processing where applicable</li>
+    <li>Withdraw consent where processing is based on consent</li>
+    <li>Complain to a data protection authority</li>
+  </ul>
+  <p>To make a request, <a href="/contact">get in touch</a>.</p>
+  <div>
+    <h2>Retention of data</h2>
+  </div>
+  <p>We retain your information for as long as your account is active and as necessary to provide you with the service.</p>
+  <p>We do not retain personal data longer than necessary to fulfill the purposes described in this policy, unless a longer retention period is required by law.</p>
+  <p>You can delete your Plausible Analytics account at any time. All your data will be permanently deleted without undue delay upon account deletion.</p>
+  <div>
+    <h2>Changes to this policy</h2>
+  </div>
+  <p>We may update this policy as needed to comply with relevant regulations and reflect any new practices.</p>
+  <p>When we make significant changes, we will update the date at the top of this page and may notify you by email, in the app, or on our website.</p>
+  <div>
+    <h2>Contact us</h2>
+  </div>
+  <p>If you have any questions about this Privacy Policy or how we handle your data, <a href="/contact">contact us</a>.</p>
+</div>
+  </div> </article>  </main> <footer class="site-footer surface-default" data-astro-cid-sz7xmlte> <div class="site-footer__inner" data-astro-cid-sz7xmlte> <p class="site-footer__lead" data-astro-cid-sz7xmlte>
+Semnote Writer keeps documents readable in source form, structured for reuse, and portable enough to outlast a single tool.
+</p> <div class="site-footer__links" data-astro-cid-sz7xmlte> <a href="/contact" data-astro-cid-sz7xmlte>Contact</a> <a href="/privacy" data-astro-cid-sz7xmlte>Privacy</a> <a href="/terms" data-astro-cid-sz7xmlte>Terms</a> </div> <p class="site-footer__meta" data-astro-cid-sz7xmlte>
+Copyright &copy; 2026 Leanersoft
+</p> </div> </footer></body></html>

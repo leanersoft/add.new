@@ -1,125 +1,395 @@
-<!doctype html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Create a support case — add.new</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<style>
-    body {
-        font:
-            16px/1.5 system-ui,
-            -apple-system,
-            Segoe UI,
-            Roboto,
-            sans-serif;
-        margin: 0;
-        display: grid;
-        place-items: center;
-        min-height: 100svh;
-        background: #0b0f19;
-        color: #e5e7eb;
+<!DOCTYPE html><html lang="en" data-theme="light" data-theme-preference="system"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="description" content="Semnote Writer runs locally in your browser so documents stay on your device and keep working offline after the first load."><title>ADD.NEW</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest"><meta name="application-name" content="ADD.NEW"><meta name="theme-color" content="#f4efe6"><script>
+  (() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
     }
-    .wrap {
-        width: 100%;
-        max-width: 680px;
-        padding: 24px;
-    }
-    h1 {
-        margin: 0 0 12px;
-    }
-    form {
-        display: grid;
-        gap: 12px;
-        background: #101826;
-        border: 1px solid #1f2737;
-        border-radius: 12px;
-        padding: 16px;
-    }
-    input,
-    select,
-    textarea,
-    button {
-        border-radius: 10px;
-        border: 1px solid #2a2f3d;
-        background: #0b1220;
-        color: #e5e7eb;
-        padding: 12px;
-    }
-    textarea {
-        min-height: 140px;
-        resize: vertical;
-    }
-    button {
-        background: #2563eb;
-        border-color: #1d4ed8;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-    small {
-        color: #9ca3af;
-    }
-    input[name="website"] {
-        position: absolute;
-        left: -9999px;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-    }
-</style>
-<div class="wrap">
-    <h1>Create a support case</h1>
-    <form action="/api/case" method="POST" accept-charset="utf-8">
-        <input name="name" placeholder="Your name" required maxlength="100" />
-        <input
-            type="email"
-            name="email"
-            placeholder="Your email"
-            required
-            maxlength="254"
-            pattern="[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-            title="Please enter a valid email address"
-        />
-        <input name="subject" placeholder="Subject" required maxlength="150" />
-        <input
-            type="text"
-            name="website"
-            tabindex="-1"
-            autocomplete="off"
-            aria-hidden="true"
-        />
-        <textarea
-            name="details"
-            placeholder="Provide details…"
-            required
-            minlength="10"
-            maxlength="2000"
-        ></textarea>
-        <select name="priority">
-            <option>Normal</option>
-            <option>Low</option>
-            <option>High</option>
-            <option>Urgent</option>
-        </select>
-        <select name="category">
-            <option>General</option>
-            <option>Legal</option>
-            <option>Sales</option>
-            <option>Issue</option>
-            <option>Suggestion</option>
-        </select>
-        <button type="submit">Open case</button>
-        <small>
-            By submitting, you agree we can email you about this case.
-        </small>
-    </form>
-</div>
-<script>
-    document.querySelector("form").addEventListener("submit", function (e) {
-        const btn = this.querySelector("button");
-        btn.disabled = true;
-        btn.textContent = "Submitting...";
+
+    const seedUrls = ["/", "/writer/", "/manifest.webmanifest", "/favicon.svg", "/search-index.json"];
+
+    const normalizeUrl = (value) => {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          return null;
+        }
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return null;
+        }
+        url.hash = "";
+        return `${url.pathname}${url.search}`;
+      } catch {
+        return null;
+      }
+    };
+
+    const collectCurrentUrls = () => {
+      const urls = new Set(seedUrls);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      urls.add(currentPath || "/");
+
+      for (const entry of performance.getEntriesByType("resource")) {
+        const normalized = normalizeUrl(entry.name);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      for (const element of document.querySelectorAll("link[href], script[src], img[src]")) {
+        const rawUrl =
+          element.getAttribute("href") ??
+          element.getAttribute("src");
+        if (!rawUrl) {
+          continue;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (normalized) {
+          urls.add(normalized);
+        }
+      }
+
+      return Array.from(urls);
+    };
+
+    const seedOfflineCache = (registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      if (!worker) {
+        return;
+      }
+      worker.postMessage({
+        type: "CACHE_URLS",
+        urls: collectCurrentUrls(),
+      });
+    };
+
+    const scheduleSeed = (registration) => {
+      const run = () => seedOfflineCache(registration);
+
+      if (document.readyState === "complete") {
+        run();
+        return;
+      }
+
+      window.addEventListener("load", run, { once: true });
+    };
+
+    const registerOfflineShell = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+        scheduleSeed(registration);
+
+        navigator.serviceWorker.ready
+          .then((readyRegistration) => {
+            scheduleSeed(readyRegistration);
+
+            if (navigator.onLine) {
+              readyRegistration.update().catch(() => {});
+            }
+          })
+          .catch(() => {});
+
+        window.addEventListener("online", () => {
+          registration.update().catch(() => {});
+          seedOfflineCache(registration);
+        });
+      } catch {
+        // Leave the site fully functional even when service workers are blocked.
+      }
+    };
+
+    registerOfflineShell();
+  })();
+</script><script>
+  (() => {
+    const storageKey = "semnote-theme";
+    const root = document.documentElement;
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const normalizePreference = (value) =>
+      value === "light" || value === "dark" || value === "system" ? value : "system";
+
+    const readStoredPreference = () => {
+      try {
+        return normalizePreference(window.localStorage.getItem(storageKey));
+      } catch {
+        return "system";
+      }
+    };
+
+    const resolveTheme = (preference) =>
+      preference === "system" ? (mediaQuery.matches ? "dark" : "light") : preference;
+
+    const applyTheme = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      const resolvedTheme = resolveTheme(normalizedPreference);
+      root.dataset.themePreference = normalizedPreference;
+      root.dataset.theme = resolvedTheme;
+      root.style.colorScheme = resolvedTheme;
+      if (colorSchemeMeta) {
+        colorSchemeMeta.setAttribute("content", resolvedTheme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("semnote:themechange", {
+          detail: { preference: normalizedPreference, resolvedTheme },
+        }),
+      );
+    };
+
+    const setPreference = (preference) => {
+      const normalizedPreference = normalizePreference(preference);
+      try {
+        if (normalizedPreference === "system") {
+          window.localStorage.removeItem(storageKey);
+        } else {
+          window.localStorage.setItem(storageKey, normalizedPreference);
+        }
+      } catch {}
+      applyTheme(normalizedPreference);
+    };
+
+    mediaQuery.addEventListener("change", () => {
+      if (readStoredPreference() === "system") {
+        applyTheme("system");
+      }
     });
-</script>
+
+    window.__semnoteTheme = {
+      getPreference: () => root.dataset.themePreference || readStoredPreference(),
+      getResolvedTheme: () => root.dataset.theme || resolveTheme(readStoredPreference()),
+      setPreference,
+    };
+
+    applyTheme(readStoredPreference());
+  })();
+</script><script type="application/json" id="sn-writer-themes-bootstrap-data">{"bundledThemes":{"writer-classic.toml":"[theme]\nid = \"writer.classic\"\nappearance = \"light\"\n\n[layout]\ntitle_height = \"38px\"\ntoolbar_height = \"32px\"\nactivity_width = \"44px\"\nleft_panel_width = \"196px\"\nright_panel_width = \"272px\"\nstatus_height = \"22px\"\nradius_sm = \"4px\"\nradius_md = \"6px\"\neditor_padding = \"20px 28px\"\npreview_padding = \"32px 48px\"\n\n[typography]\nui_font = '-apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif'\neditor_font = '\"JetBrains Mono\", Menlo, Consolas, monospace'\npreview_heading_font = '-apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif'\npreview_body_font = '-apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif'\neditor_font_size = \"13px\"\npreview_font_size = \"15px\"\n\n[surface]\nchrome = \"#ffffff\"\nactivity = \"#f0f0f0\"\nsidebar = \"#f7f7f7\"\ntoolbar = \"#fafafa\"\neditor = \"#ffffff\"\npreview = \"#ffffff\"\nstatus = \"#007acc\"\n\n[text]\nbase = \"#1a1a1a\"\nmuted = \"#767676\"\nfaint = \"#c0c0c0\"\nstatus = \"#ffffff\"\naccent_on = \"#ffffff\"\n\n[action]\nprimary = \"#0066cc\"\nprimary_on = \"#ffffff\"\n\n[border]\ndefault = \"#e2e2e2\"\ndivider = \"#e2e2e2\"\nfocus = \"#0066cc\"\n\n[interaction]\nhover = \"#ebebeb\"\nactive = \"#dde8f8\"\nselected = \"#eef3fc\"\n\n[accent]\nbase = \"#0066cc\"\n\n[selection]\nbackground = \"#eef3fc\"\ntext = \"#1a1a1a\"\n\n[brand]\nlogo_background = \"#1a1a1a\"\nlogo_text = \"#ffffff\"\nscrollbar = \"#d0d0d0\"\n","writer-nocturne-dark.toml":"[theme]\nid = \"writer.nocturne-dark\"\nappearance = \"dark\"\n\n[layout]\ntitle_height = \"40px\"\ntoolbar_height = \"32px\"\nactivity_width = \"44px\"\nleft_panel_width = \"208px\"\nright_panel_width = \"280px\"\nstatus_height = \"22px\"\nradius_sm = \"6px\"\nradius_md = \"10px\"\neditor_padding = \"22px 32px\"\npreview_padding = \"40px 56px\"\n\n[typography]\nui_font = '\"DM Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif'\neditor_font = '\"Space Mono\", ui-monospace, \"SFMono-Regular\", \"Cascadia Code\", monospace'\npreview_heading_font = '\"Lora\", Georgia, \"Times New Roman\", serif'\npreview_body_font = '\"Lora\", Georgia, \"Times New Roman\", serif'\neditor_font_size = \"13px\"\npreview_font_size = \"16px\"\n\n[surface]\nchrome = \"oklch(23% 0.012 255)\"\nactivity = \"oklch(19% 0.011 255)\"\nsidebar = \"oklch(25% 0.013 255)\"\ntoolbar = \"oklch(26% 0.013 255)\"\neditor = \"oklch(17% 0.01 255)\"\npreview = \"oklch(21% 0.012 255)\"\nstatus = \"oklch(34% 0.03 250)\"\n\n[text]\nbase = \"oklch(94% 0.012 82)\"\nmuted = \"oklch(76% 0.016 255)\"\nfaint = \"oklch(60% 0.012 255)\"\nstatus = \"oklch(96% 0.012 82)\"\naccent_on = \"oklch(17% 0.01 255)\"\n\n[action]\nprimary = \"oklch(75% 0.11 72)\"\nprimary_on = \"oklch(17% 0.01 255)\"\n\n[border]\ndefault = \"oklch(31% 0.014 255)\"\ndivider = \"oklch(31% 0.014 255)\"\nfocus = \"oklch(75% 0.11 72)\"\n\n[interaction]\nhover = \"oklch(27% 0.016 255)\"\nactive = \"oklch(32% 0.024 72)\"\nselected = \"oklch(36% 0.03 72)\"\n\n[accent]\nbase = \"oklch(75% 0.11 72)\"\n\n[selection]\nbackground = \"oklch(36% 0.03 72)\"\ntext = \"oklch(94% 0.012 82)\"\n\n[brand]\nlogo_background = \"oklch(75% 0.11 72)\"\nlogo_text = \"oklch(17% 0.01 255)\"\nscrollbar = \"oklch(31% 0.014 255)\"\n","writer-site-light.toml":"[theme]\nid = \"writer.site-light\"\nappearance = \"light\"\n\n[layout]\ntitle_height = \"40px\"\ntoolbar_height = \"32px\"\nactivity_width = \"44px\"\nleft_panel_width = \"208px\"\nright_panel_width = \"280px\"\nstatus_height = \"22px\"\nradius_sm = \"6px\"\nradius_md = \"10px\"\neditor_padding = \"22px 32px\"\npreview_padding = \"40px 56px\"\n\n[typography]\nui_font = '\"DM Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif'\neditor_font = '\"Space Mono\", ui-monospace, \"SFMono-Regular\", \"Cascadia Code\", monospace'\npreview_heading_font = '\"Lora\", Georgia, \"Times New Roman\", serif'\npreview_body_font = '\"Lora\", Georgia, \"Times New Roman\", serif'\neditor_font_size = \"13px\"\npreview_font_size = \"16px\"\n\n[surface]\nchrome = \"oklch(95.7% 0.018 81)\"\nactivity = \"oklch(93.8% 0.02 80)\"\nsidebar = \"oklch(95.7% 0.018 81)\"\ntoolbar = \"oklch(95.7% 0.018 81)\"\neditor = \"oklch(96.9% 0.017 82)\"\npreview = \"oklch(95.7% 0.018 81)\"\nstatus = \"oklch(61.9% 0.158 39)\"\n\n[text]\nbase = \"oklch(18.2% 0.018 42)\"\nmuted = \"oklch(42.8% 0.028 52)\"\nfaint = \"oklch(50.5% 0.03 54)\"\nstatus = \"oklch(96.9% 0.017 82)\"\naccent_on = \"oklch(96.9% 0.017 82)\"\n\n[action]\nprimary = \"oklch(61.9% 0.158 39)\"\nprimary_on = \"oklch(96.9% 0.017 82)\"\n\n[border]\ndefault = \"oklch(91.7% 0.022 78)\"\ndivider = \"oklch(91.7% 0.022 78)\"\nfocus = \"oklch(61.9% 0.158 39)\"\n\n[interaction]\nhover = \"oklch(95.7% 0.018 81)\"\nactive = \"oklch(93.8% 0.02 80)\"\nselected = \"oklch(89.4% 0.034 45)\"\n\n[accent]\nbase = \"oklch(61.9% 0.158 39)\"\n\n[selection]\nbackground = \"oklch(89.4% 0.034 45)\"\ntext = \"oklch(18.2% 0.018 42)\"\n\n[brand]\nlogo_background = \"oklch(61.9% 0.158 39)\"\nlogo_text = \"oklch(96.9% 0.017 82)\"\nscrollbar = \"oklch(91.7% 0.022 78)\"\n"},"defaultSelection":{"light":"writer-classic.toml","dark":"writer-nocturne-dark.toml"},"styleElementIds":{"light":"sn-writer-theme-light","dark":"sn-writer-theme-dark"},"tomlToCssVarMap":{"layout.title_height":["--sn-writer-title-h"],"layout.toolbar_height":["--sn-writer-toolbar-h"],"layout.activity_width":["--sn-writer-activity-w"],"layout.left_panel_width":["--sn-writer-left-w"],"layout.right_panel_width":["--sn-writer-right-w"],"layout.status_height":["--sn-writer-status-h"],"layout.radius_sm":["--sn-writer-radius"],"layout.radius_md":["--sn-writer-radius-lg"],"layout.editor_padding":["--sn-writer-editor-pad"],"layout.preview_padding":["--sn-writer-preview-pad"],"typography.ui_font":["--sn-writer-font-ui"],"typography.editor_font":["--sn-writer-font-editor"],"typography.preview_heading_font":["--sn-writer-font-preview-heading"],"typography.preview_body_font":["--sn-writer-font-preview-body"],"typography.editor_font_size":["--sn-writer-editor-fs"],"typography.preview_font_size":["--sn-writer-preview-fs"],"surface.chrome":["--sn-writer-surface-chrome"],"surface.activity":["--sn-writer-surface-activity"],"surface.sidebar":["--sn-writer-surface-sidebar"],"surface.toolbar":["--sn-writer-surface-toolbar"],"surface.editor":["--sn-writer-surface-editor"],"surface.preview":["--sn-writer-surface-preview"],"surface.status":["--sn-writer-surface-status"],"text.base":["--sn-text-base","--sn-writer-text"],"text.muted":["--sn-text-muted","--sn-writer-text-muted"],"text.faint":["--sn-text-soft","--sn-writer-text-faint"],"text.status":["--sn-writer-status-text"],"text.accent_on":["--sn-text-on-emphasis","--sn-writer-accent-text"],"action.primary":["--sn-writer-action-primary"],"action.primary_on":["--sn-writer-action-primary-text"],"border.default":["--sn-writer-border"],"border.divider":["--sn-writer-divider"],"border.focus":["--sn-border-focus"],"interaction.hover":["--sn-writer-hover"],"interaction.active":["--sn-writer-active"],"interaction.selected":["--sn-writer-selected"],"accent.base":["--sn-accent-base","--sn-writer-accent"],"selection.background":["--sn-selection-background"],"selection.text":["--sn-selection-text"]}}</script> <script>
+  (() => {
+    const bootstrapDataElement = document.getElementById('sn-writer-themes-bootstrap-data');
+    if (!(bootstrapDataElement instanceof HTMLScriptElement)) {
+      return;
+    }
+
+    const {
+      bundledThemes,
+      defaultSelection,
+      styleElementIds,
+      tomlToCssVarMap,
+    } = JSON.parse(bootstrapDataElement.textContent ?? '{}');
+
+    const themesStorageKey = 'semnote-writer-themes';
+    const selectionStorageKey = 'semnote-writer-theme-selection';
+
+    const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+    const readJsonStorage = (key) => {
+      try {
+        const rawValue = window.localStorage.getItem(key);
+        return rawValue ? JSON.parse(rawValue) : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+
+    const writeJsonStorage = (key, value) => {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        // Leave the defaults in-memory when storage is unavailable.
+      }
+    };
+
+    const readStoredThemes = () => {
+      const parsed = readJsonStorage(themesStorageKey);
+      if (!isRecord(parsed)) {
+        return {};
+      }
+
+      const themes = {};
+      for (const [filename, candidate] of Object.entries(parsed)) {
+        if (!isRecord(candidate) || typeof candidate.raw !== 'string') {
+          continue;
+        }
+
+        const storedFilename =
+          typeof candidate.filename === 'string' && candidate.filename.length > 0
+            ? candidate.filename
+            : filename;
+        themes[storedFilename] = {
+          filename: storedFilename,
+          raw: candidate.raw,
+          source: candidate.source === 'user' ? 'user' : 'bundled',
+        };
+      }
+
+      return themes;
+    };
+
+    const seedBundledThemes = () => {
+      const themes = readStoredThemes();
+      let didChange = false;
+
+      for (const [filename, raw] of Object.entries(bundledThemes)) {
+        if (themes[filename]) {
+          continue;
+        }
+
+        themes[filename] = { filename, raw, source: 'bundled' };
+        didChange = true;
+      }
+
+      if (didChange) {
+        writeJsonStorage(themesStorageKey, themes);
+      }
+
+      return themes;
+    };
+
+    const parseThemeToml = (raw) => {
+      const parsed = {};
+      let currentSection = null;
+
+      for (const line of raw.split(/\r?\n/u)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) {
+          continue;
+        }
+
+        const sectionMatch = trimmed.match(/^\[([^\]]+)\]$/u);
+        if (sectionMatch) {
+          currentSection = sectionMatch[1];
+          if (!parsed[currentSection]) {
+            parsed[currentSection] = {};
+          }
+          continue;
+        }
+
+        const entryMatch = trimmed.match(/^([A-Za-z0-9_]+)\s*=\s*(.+)$/u);
+        if (!entryMatch || currentSection === null) {
+          continue;
+        }
+
+        let value = entryMatch[2].trim();
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+
+        parsed[currentSection][entryMatch[1]] = value;
+      }
+
+      return parsed;
+    };
+
+    const getTomlValue = (parsedToml, path) => {
+      let current = parsedToml;
+      for (const segment of path.split('.')) {
+        if (!isRecord(current) || !(segment in current)) {
+          return undefined;
+        }
+
+        current = current[segment];
+      }
+
+      return typeof current === 'string' ? current : undefined;
+    };
+
+    const parseTheme = (raw) => {
+      const parsedToml = parseThemeToml(raw);
+      const appearance = parsedToml.theme?.appearance;
+      if (appearance !== 'light' && appearance !== 'dark') {
+        return undefined;
+      }
+
+      const cssVars = {};
+      for (const [path, cssVarNames] of Object.entries(tomlToCssVarMap)) {
+        const value = getTomlValue(parsedToml, path);
+        if (!value) {
+          continue;
+        }
+
+        for (const cssVarName of cssVarNames) {
+          cssVars[cssVarName] = value;
+        }
+      }
+
+      return { appearance, cssVars };
+    };
+
+    const resolveSelectionFilename = (appearance, candidateFilename, themes) => {
+      if (typeof candidateFilename === 'string' && candidateFilename.length > 0) {
+        const parsedTheme = themes[candidateFilename] ? parseTheme(themes[candidateFilename].raw) : undefined;
+        if (parsedTheme?.appearance === appearance) {
+          return candidateFilename;
+        }
+      }
+
+      const defaultFilename = defaultSelection[appearance];
+      const parsedDefault = themes[defaultFilename] ? parseTheme(themes[defaultFilename].raw) : undefined;
+      if (parsedDefault?.appearance === appearance) {
+        return defaultFilename;
+      }
+
+      for (const theme of Object.values(themes)) {
+        const parsedTheme = parseTheme(theme.raw);
+        if (parsedTheme?.appearance === appearance) {
+          return theme.filename;
+        }
+      }
+
+      return defaultFilename;
+    };
+
+    const readStoredSelection = () => {
+      const parsed = readJsonStorage(selectionStorageKey);
+      return isRecord(parsed) ? parsed : {};
+    };
+
+    const ensureStyleElement = (appearance) => {
+      const styleId = styleElementIds[appearance];
+      const existing = document.getElementById(styleId);
+      if (existing instanceof HTMLStyleElement) {
+        return existing;
+      }
+
+      const styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.append(styleElement);
+      return styleElement;
+    };
+
+    const renderCss = (appearance, cssVars) => {
+      const declarations = Object.entries(cssVars)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, value]) => `  ${name}: ${value};`);
+      if (declarations.length === 0) {
+        return '';
+      }
+
+      return [`html[data-theme="${appearance}"] {`, ...declarations, '}'].join('\n');
+    };
+
+    const applyThemes = () => {
+      const themes = seedBundledThemes();
+      const selection = readStoredSelection();
+
+      for (const appearance of ['light', 'dark']) {
+        const filename = resolveSelectionFilename(appearance, selection[appearance], themes);
+        const parsedTheme = themes[filename] ? parseTheme(themes[filename].raw) : undefined;
+        ensureStyleElement(appearance).textContent = parsedTheme
+          ? renderCss(appearance, parsedTheme.cssVars)
+          : '';
+      }
+    };
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    applyThemes();
+  })();
+</script><link rel="stylesheet" href="/_astro/global.BQXuNs0x.css">
+<style>@font-face{font-family:DM Sans;src:url(/fonts/writer/dm-sans-latin.woff2) format("woff2");font-weight:300 600;font-style:normal;font-display:swap}@font-face{font-family:DM Mono;src:url(/fonts/writer/dm-mono-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:DM Mono;src:url(/fonts/writer/dm-mono-500.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:JetBrains Mono;src:url(/fonts/writer/jetbrains-mono-latin.woff2) format("woff2");font-weight:400 500;font-style:normal;font-display:swap}@font-face{font-family:Lora;src:url(/fonts/writer/lora-normal-latin.woff2) format("woff2");font-weight:400 600;font-style:normal;font-display:swap}@font-face{font-family:Lora;src:url(/fonts/writer/lora-italic-400-latin.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}:root{--sn-writer-title-h: 2.5rem;--sn-writer-toolbar-h: 2rem;--sn-writer-activity-w: 2.75rem;--sn-writer-status-h: 1.5rem;--sn-writer-left-w: 13rem;--sn-writer-right-w: 17rem;--sn-writer-radius: .25rem;--sn-writer-radius-lg: .375rem;--sn-writer-font-ui: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;--sn-writer-font-editor: "JetBrains Mono", "DM Mono", ui-monospace, Menlo, Consolas, monospace;--sn-writer-font-preview-heading: var(--sn-writer-font-ui);--sn-writer-font-preview-body: var(--sn-writer-font-ui);--sn-writer-editor-fs: .8125rem;--sn-writer-preview-fs: .9375rem;--sn-writer-editor-pad: 1.25rem 1.75rem;--sn-writer-preview-pad: 2rem 3rem;--sn-writer-surface-chrome: var(--sn-surface-panel);--sn-writer-surface-editor: var(--sn-surface-base);--sn-writer-surface-preview: var(--sn-surface-base);--sn-writer-surface-toolbar: var(--sn-surface-panel);--sn-writer-surface-activity: var(--sn-surface-panel);--sn-writer-surface-sidebar: var(--sn-surface-panel);--sn-writer-surface-status: var(--sn-accent-base);--sn-writer-border: var(--sn-border-default, var(--sn-border-subtle, #d6d8de));--sn-writer-divider: var(--sn-writer-border);--sn-writer-hover: var(--sn-interactive-hover, color-mix(in oklch, var(--sn-text-base) 8%, transparent));--sn-writer-active: var(--sn-interactive-active, color-mix(in oklch, var(--sn-accent-base) 18%, transparent));--sn-writer-selected: var(--sn-interactive-selected, color-mix(in oklch, var(--sn-accent-base) 14%, transparent));--sn-writer-hover: color-mix(in oklch, var(--sn-text-base) 8%, transparent);--sn-writer-active: color-mix(in oklch, var(--sn-accent-base) 18%, transparent);--sn-writer-selected: color-mix(in oklch, var(--sn-accent-base) 14%, transparent);--sn-writer-text-faint: var(--sn-text-muted, var(--sn-writer-text-muted));--sn-writer-accent: var(--sn-accent-base);--sn-writer-accent-text: var(--sn-text-on-emphasis, #ffffff);--sn-writer-action-primary: var(--sn-writer-accent);--sn-writer-action-primary-text: var(--sn-writer-accent-text);--sn-writer-text: #2a1e10;--sn-writer-text-muted: #8a7564;--sn-writer-text-faint: #bdb0a0;--sn-writer-status-text: #f0e8dc;--sn-writer-accent: #b8722a;--sn-writer-accent-text: #ffffff;--sn-writer-action-primary: #b8722a;--sn-writer-action-primary-text: #ffffff}[data-theme=dark]{--sn-writer-surface-editor: var(--sn-surface-base);--sn-writer-surface-preview: var(--sn-surface-base);--sn-writer-surface-chrome: var(--sn-surface-panel);--sn-writer-surface-toolbar: color-mix( in oklch, var(--sn-surface-panel) 88%, var(--sn-surface-base) );--sn-writer-surface-activity: color-mix( in oklch, var(--sn-surface-panel) 92%, var(--sn-surface-base) )}html,body{height:100%;margin:0;padding:0;overflow:hidden}body{background:var(--sn-writer-surface-chrome);color:var(--sn-writer-text);font-family:var(--sn-writer-font-ui);background-image:none;min-height:0}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:color-mix(in oklch,var(--sn-writer-border) 80%,transparent);border-radius:3px}::-webkit-scrollbar-track{background:transparent}
+</style>
+<link rel="stylesheet" href="/_astro/WriterApp.B2xNYf96.css"></head> <body>  <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).only=e;window.dispatchEvent(new Event("astro:only"));})();</script><script>(()=>{var g=Object.defineProperty;var w=(c,s,d)=>s in c?g(c,s,{enumerable:!0,configurable:!0,writable:!0,value:d}):c[s]=d;var l=(c,s,d)=>w(c,typeof s!="symbol"?s+"":s,d);var E=new Set(["__proto__","constructor","prototype"]);{let c={0:t=>y(t),1:t=>d(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(d(t)),5:t=>new Set(d(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>Number.POSITIVE_INFINITY*t},s=t=>{let[p,e]=t;return p in c?c[p](e):void 0},d=t=>t.map(s),y=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([p,e])=>[p,s(e)]));class f extends HTMLElement{constructor(){super(...arguments);l(this,"Component");l(this,"hydrator");l(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let n=this.querySelectorAll("astro-slot"),r={},i=this.querySelectorAll("template[data-astro-template]");for(let o of i){let a=o.closest(this.tagName);a!=null&&a.isSameNode(this)&&(r[o.getAttribute("data-astro-template")||"default"]=o.innerHTML,o.remove())}for(let o of n){let a=o.closest(this.tagName);a!=null&&a.isSameNode(this)&&(r[o.getAttribute("name")||"default"]=o.innerHTML)}let u;try{u=this.hasAttribute("props")?y(JSON.parse(this.getAttribute("props"))):{}}catch(o){let a=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(a+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${a}`,this.getAttribute("props"),o),o}let h;await this.hydrator(this)(this.Component,u,r,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});l(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),n.disconnect(),this.childrenConnectedCallback()},n=new MutationObserver(()=>{var r;((r=this.lastChild)==null?void 0:r.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});n.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}getRetryImportUrl(e){let n=new URL(e,document.baseURI),r=`astro-retry=${Date.now()}`,i=n.hash.replace(/^#/,"");return n.hash=i?`${i}&${r}`:r,n.toString()}async importWithRetry(e){try{return await import(e)}catch(n){return await new Promise(r=>setTimeout(r,1e3)),import(this.getRetryImportUrl(e))}}handleHydrationError(e){let n=this.getAttribute("component-url"),r=new CustomEvent("astro:hydration-error",{cancelable:!0,bubbles:!0,composed:!0,detail:{error:e,componentUrl:n}});this.dispatchEvent(r)&&console.error(`[astro-island] Error hydrating ${n}`,e)}async start(){let e=JSON.parse(this.getAttribute("opts")),n=this.getAttribute("client");if(Astro[n]===void 0){window.addEventListener(`astro:${n}`,()=>this.start(),{once:!0});return}try{await Astro[n](async()=>{let r=this.getAttribute("renderer-url");try{let[i,{default:u}]=await Promise.all([this.importWithRetry(this.getAttribute("component-url")),r?this.importWithRetry(r):Promise.resolve({default:()=>()=>{}})]),h=this.getAttribute("component-export")||"default";if(h.includes(".")){this.Component=i;for(let m of h.split(".")){if(E.has(m)||!this.Component||typeof this.Component!="object"&&typeof this.Component!="function"||!Object.hasOwn(this.Component,m))throw new Error(`Invalid component export path: ${h}`);this.Component=this.Component[m]}}else{if(E.has(h))throw new Error(`Invalid component export path: ${h}`);this.Component=i[h]}return this.hydrator=u,this.hydrate}catch(i){return this.handleHydrationError(i),()=>{}}},e,this)}catch(r){this.handleHydrationError(r)}}attributeChangedCallback(){this.hydrate()}}l(f,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",f)}})();</script><astro-island uid="Qbd5U" component-url="/_astro/WriterApp.DcP53Axp.js" component-export="default" renderer-url="/_astro/client.D_7nQosA.js" props="{&quot;helpColumns&quot;:[1,[[0,{&quot;slot&quot;:[0,&quot;1&quot;],&quot;html&quot;:[0,&quot;\n&lt;div&gt;\n  &lt;h2&gt;Document structure&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;\n      &lt;p&gt;Start in &lt;strong&gt;code&lt;/strong&gt; mode. Properties may only be set in this mode.&lt;/p&gt;\n      &lt;ul&gt;\n        &lt;li&gt;‘&lt;code&gt;--&lt;/code&gt;’ on its own line switches to &lt;strong&gt;markup&lt;/strong&gt;&lt;/li&gt;\n        &lt;li&gt;then ‘&lt;code&gt;++&lt;/code&gt;’ on its own line switches back to &lt;strong&gt;code&lt;/strong&gt;&lt;/li&gt;\n      &lt;/ul&gt;\n    &lt;/li&gt;\n    &lt;li&gt;Blank lines separate paragraphs.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;# comment&lt;/code&gt; — ignored line (note the space after ‘&lt;code&gt;#&lt;/code&gt;’).&lt;/li&gt;\n    &lt;li&gt;‘&lt;code&gt;***&lt;/code&gt;’ on its own line — horizontal rule.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Headings&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;‘&lt;code&gt;= section&lt;/code&gt;’, ‘&lt;code&gt;== subsection&lt;/code&gt;’, ‘&lt;code&gt;=== sub-sub&lt;/code&gt;’, etc. — add more &lt;code&gt;=&lt;/code&gt; for deeper levels.&lt;/li&gt;\n    &lt;li&gt;Don’t use ‘&lt;code&gt;=&lt;/code&gt;’ for the document title; insert it with &lt;code&gt;#title()&lt;/code&gt; instead.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Lists&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;- item&lt;/code&gt; — bullet. &lt;code&gt;+ item&lt;/code&gt; — numbered. Note the space after the marker. &lt;code&gt;-item&lt;/code&gt; without a space is text; &lt;code&gt;- item&lt;/code&gt; is a list item.&lt;/li&gt;\n    &lt;li&gt;Indent by two spaces to continue or nest, aligning content with the left column.&lt;/li&gt;\n    &lt;li&gt;Switching markers (‘&lt;code&gt;-&lt;/code&gt;’ to ‘&lt;code&gt;+&lt;/code&gt;’ or back) starts a new list.&lt;/li&gt;\n    &lt;li&gt;Items may contain any markup structure, such as paragraphs, headings, quotes, or nested lists.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Quotes&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;&gt; text&lt;/code&gt; on a line starts a quote. Indent subsequent lines by two spaces.&lt;/li&gt;\n    &lt;li&gt;Repeated &lt;code&gt;&gt;&lt;/code&gt; at the start of a line begins a new quote each time; use indentation to continue the current quote.&lt;/li&gt;\n    &lt;li&gt;Rules for quote content are the same as for lists.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;^ source&lt;/code&gt; adds quote attribution; align &lt;code&gt;^&lt;/code&gt; with &lt;code&gt;&gt;&lt;/code&gt;.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Inline marks&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;*strong*&lt;/code&gt;, &lt;code&gt;_emphasis_&lt;/code&gt;.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;&amp;lt;https://example.com&gt;&lt;/code&gt; — link. &lt;code&gt;&amp;lt;https://example.com|label&gt;&lt;/code&gt; — link with text.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;raw&lt;/code&gt; — keeps exact characters, useful for short syntax samples.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;#$sqrt(x)$&lt;/code&gt; — inline math, with &lt;strong&gt;no&lt;/strong&gt; spaces inside the markers.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;#$ sum_(i=0)^n i $&lt;/code&gt; — standalone math, &lt;strong&gt;with&lt;/strong&gt; spaces inside the markers.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Multi-part files&lt;/h2&gt;\n  &lt;p&gt;This feature is rarely needed, but may be useful when you want to keep multiple pieces of content in the same file.&lt;/p&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;---&lt;/code&gt; on its own line — child part. The main part is the first part, &lt;em&gt;before&lt;/em&gt; this marker.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;+++&lt;/code&gt; on its own line — sibling part. Starts a new top-level part, with its own main and optional child parts.&lt;/li&gt;\n    &lt;li&gt;Each part has its own properties and body, but child parts can also access properties from the main part as their own.&lt;/li&gt;\n    &lt;li&gt;Each part starts in &lt;strong&gt;code&lt;/strong&gt; mode.&lt;/li&gt;\n  &lt;/ul&gt;\n&lt;/div&gt;\n&quot;]}],[0,{&quot;slot&quot;:[0,&quot;2&quot;],&quot;html&quot;:[0,&quot;\n&lt;div&gt;\n  &lt;h2&gt;Values&lt;/h2&gt;\n  &lt;ul&gt;\n    &lt;li&gt;In numbers, groups of digits may be separated by spaces, commas, dots, underscores, or nothing. If a group separator is used, it must be consistent within the number. The fractional part may be separated by a comma or a dot, and must differ from the group separator.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;{2026-05-20}&lt;/code&gt;, &lt;code&gt;{14:30}&lt;/code&gt;, &lt;code&gt;{2:30pm}&lt;/code&gt; — recognized date and time shapes; may be used as property values or appear in markup.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;&#39;2026-05-20&#39;&lt;/code&gt; as a value — single quotes ensure it is &lt;em&gt;always&lt;/em&gt; interpreted as a date, number, time, date-time, keyword, etc., even if the same property name has been defined. To use it in markup, put it inside curly braces or after &lt;code&gt;#&lt;/code&gt;.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Properties&lt;/h2&gt;\n  &lt;p&gt;Can be set only in code mode.&lt;/p&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;key: value&lt;/code&gt; — single-line property. The key may be a simple property name or a &lt;em&gt;path&lt;/em&gt;, with slash characters ‘&lt;code&gt;/&lt;/code&gt;’ acting like file path separators between parent paths and property names under them. The value is treated as markup and also accepts expressions in single quotes or curly braces.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;path/&lt;/code&gt; followed by an indented body on subsequent lines — multi-line value, each line with 2-space indentation. It starts in code mode and may switch to markup with ‘&lt;code&gt;--&lt;/code&gt;’ or back with ‘&lt;code&gt;++&lt;/code&gt;’ on its own line, indented the same way as the other lines. Nested properties get &lt;code&gt;path/&lt;/code&gt; added to the start of their names.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h3&gt;Using a property in your document&lt;/h3&gt;\n  &lt;p&gt;Given a property named &lt;code&gt;work schedule&lt;/code&gt;:&lt;/p&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;code&gt;#work schedule&lt;/code&gt; or &lt;code&gt;{work schedule}&lt;/code&gt; — inserts the property value inline anywhere except raw code; curly braces are clearer because they mark where the property name ends.&lt;/li&gt;\n    &lt;li&gt;&lt;code&gt;#&#39;10 000,50&#39;&lt;/code&gt; in markup — literal value, matching &lt;code&gt;&#39;…&#39;&lt;/code&gt; in properties.&lt;/li&gt;\n  &lt;/ul&gt;\n  &lt;h2&gt;Common surprises&lt;/h2&gt;\n  &lt;p&gt;Preview stops updating and gets visually muted when there’s an error in code or markup.&lt;/p&gt;\n  &lt;ul&gt;\n    &lt;li&gt;Missing &lt;code&gt;--&lt;/code&gt; before markup.&lt;/li&gt;\n    &lt;li&gt;Without a blank line, subsequent lines belong to the same paragraph and are joined in the output with a space between them.&lt;/li&gt;\n    &lt;li&gt;Incorrect indentation — too few or too many spaces. Use exactly 2 spaces for each line of nested child content.&lt;/li&gt;\n    &lt;li&gt;Typos in property names.&lt;/li&gt;\n    &lt;li&gt;When&lt;span style=\&quot;white-space: pre-wrap\&quot;&gt;&amp;#x20;&lt;/span&gt;&lt;code&gt; ```&lt;span style=\&quot;white-space: pre-wrap\&quot;&gt;&amp;#x20;&lt;/span&gt;&lt;/code&gt; is used for &lt;em&gt;inline&lt;/em&gt; raw code examples, a single space is &lt;em&gt;required&lt;/em&gt; around the inner expression. Without it, behavior is not always correct, even though it works as expected in most cases. Any additional spaces are part of the expression.&lt;/li&gt;\n  &lt;/ul&gt;\n&lt;/div&gt;\n&quot;]}]]]}" ssr client="only" opts="{&quot;name&quot;:&quot;WriterApp&quot;,&quot;value&quot;:&quot;solid-js&quot;}"></astro-island> </body></html>
